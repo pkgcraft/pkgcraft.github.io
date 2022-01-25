@@ -20,13 +20,12 @@ since core counts were low for consumer machines. Therefore, parallelization
 wasn't overly important and improving the package tree was generally a higher
 priority.
 
-In retrospect, the project probably should have tried to capitalize more off
-the interest wave and explore other ideas before, in effect, chaining itself to
-bash for life. While I understand the upsides for selecting bash to base
-tooling on, the downsides are quite large from a backend developer's
-perspective as bash is highly focused on doing a couple things well, running
-scripts and being an interactive shell. Its underlying code leaves a lot to be
-desired when trying to force it outside those bounds.
+In retrospect, the project should have capitalized more off the interest wave
+to explore other ideas before, in effect, chaining itself to bash for life.
+While I understand the upsides for selecting bash as a base, the downsides are
+quite large from a developer's perspective as bash is highly focused on two
+things, running scripts and interactive shell usage. Its underlying structure
+leaves a lot to be desired when trying to force it outside those bounds.
 
 ##### 2010 -- New package managers on the block
 
