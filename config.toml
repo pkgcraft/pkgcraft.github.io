@@ -148,7 +148,7 @@ uglyURLs = false
 
 # Maximum number of items in the Atom & RSS feed
 [services.rss]
-    limit = -1
+    limit = 25
 
 ##########################################
 # Menu Settings
