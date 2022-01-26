@@ -12,8 +12,6 @@ processes between separate tasks rather than relying on a simplistic
 exec-per-use scheme. Among other effects, this makes pkgcore's metadata
 generation approximately five times faster than its main competitor.
 
-### Forking bash
-
 Pkgcraft aims to move beyond daemon functionality and achieve better lower
 level integration. While the thought of replacing bash with something
 threadable and modern is enticing, it's fairly impossible in the short-term and
