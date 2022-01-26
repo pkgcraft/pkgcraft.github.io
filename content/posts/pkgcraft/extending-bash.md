@@ -7,15 +7,15 @@ categories: ["bash"]
 ---
 
 One of the major improvements pkgcore provides is its integration of a daemon
-supporting IPC between the python and bash sides. This enables sharing bash
-processes between separate tasks rather than relying on a simplistic
-exec-per-use scheme. Among other effects, this makes pkgcore's metadata
-generation approximately five times faster than its main competitor.
+supporting IPC between python and bash. This enables sharing bash processes
+between separate tasks rather than relying on a simplistic exec-per-use scheme.
+Among other effects, this makes pkgcore's metadata generation approximately
+five times faster than its main competitor.
 
 Pkgcraft aims to move beyond daemon functionality and achieve better lower
 level integration. While the thought of replacing bash with something
 threadable and modern is enticing, it's fairly impossible in the short-term and
-thus diregarded here. Instead, pkgcraft dives directly into the pit of
+thus disregarded here. Instead, pkgcraft dives directly into the pit of
 insanity; it forks bash[^1] in an effort to achieve its goals.
 
 To understand why this is necessary, recall from the previous post that bash is
