@@ -40,12 +40,12 @@ rework in order for that to be possible.
 With that in mind, in order to support parallel usage a process pool or similar
 design must be used. Unfortunately this currently isn't something that can
 easily be dropped into place like python's multiprocessing pool support.
-Parallelism in rust centers around threading since its guarantees of memory
-safety and lifetimes lend themselves to data-race free threaded execution. This
-means that most data parallelism crates similar to rayon only support threaded
-operation, disregarding multi-process support entirely. At some point, pkgcraft
-will have to address this and probably create its own pool or parallelized
-iterator support that reuses processes.
+Parallelism in rust centers around threading since its memory safety through
+enforced lifetimes highlights threaded execution that's guaranteed data-race
+free. This means that most data parallelism crates similar to rayon only
+support threaded operation, disregarding multi-process support entirely. At
+some point, pkgcraft will have to address this and probably create its own pool
+or parallelized iterator support that reuses processes.
 
 ### Error handling
 
