@@ -52,7 +52,7 @@ nontrivial task in later years.
 
 2015 was about the time I started getting involved in pkgcore-related
 development. For my part, most of my work on pkgcore and its related tools was
-due to curiousity, interest, and a hesistancy to let the project entirely die.
+due to curiosity, interest, and a hesitancy to let the project entirely die.
 Over the next few years I would drag pkgcore along, keeping it barely alive,
 culminating in rewriting pkgcheck (the pkgcore-based ebuild linter) nearly from
 scratch in an effort to parallelize it as much as its python-based nature
@@ -98,4 +98,4 @@ slowly became a reality as the ecosystem grew enough where third party
 libraries existed to support the intended design. Whether it will surpass
 pkgcore's efforts or fade away as an ephemeral dream remains to be seen, but
 hopefully these chronicles entertain, inform, or inspire others to support this
-timesink or strive towards their own.
+timesink and strive towards their own.
