@@ -6,52 +6,54 @@ tags: ["pkgcraft", "bash"]
 categories: ["bash"]
 ---
 
-One of the major improvements pkgcore provides is its integration of a daemon
-supporting IPC between python and bash. This enables sharing bash processes
-between separate tasks rather than relying on a simplistic exec-per-use scheme.
-Among other effects, this makes pkgcore's metadata generation approximately
-five times faster than its main competitor.
+Basing a package manager and related specification on bash is a mistake.
+Familiarity and hackability are great in the short-term, but as the novelty
+wears off it becomes clear that maintainability, efficiency, and other
+attributes hard to wrest from bash's rigid design all suffer. As long as
+compatibility remains important for pkgcraft that decision can't be altered;
+however, that doesn't mean nothing can be done to improve the situation.
+
+One option is to go pkgcore's route, daemonizing IPC support between python and
+bash. This enables sharing bash processes between separate tasks rather than
+relying on a simplistic exec-per-use scheme. Among other effects, this makes
+pkgcore's metadata generation approximately five times faster than its main
+competitor. While providing many marginal improvements, this daemonized
+approach still doesn't escape the restrictive boundaries of regular shell
+usage. Among other downsides, pkgcore requires subshells (meaning additional
+processes) to avoid environment leaks during metadata generation and uses hacky
+RPC signaling across pipes since it's hard to work with anything else natively
+in bash.
 
 Pkgcraft aims to move beyond daemon functionality and achieve better lower
-level integration. While the thought of replacing bash with something
-threadable and modern is enticing, it's fairly impossible in the short-term and
-thus disregarded here. Instead, pkgcraft dives directly into the pit of
-insanity; it forks bash[^1] in an effort to achieve its goals.
-
-To understand why this is necessary, recall from the previous post that bash is
-mainly focused on running scripts and interactive shell usage. Neither of those
-aids priorities such as efficiency, performance, or maintainability when
-developing a package manager. One might think it's enough to go pkgcore's route
-using IPC with a daemon, but that doesn't escape the restrictive boundaries of
-regular shell usage. Among other downsides, pkgcore requires subshells (meaning
-additional processes) to avoid environment leaks during metadata generation and
-uses hacky RPC signaling across pipes since it's hard to work with anything
-else natively in bash.
+level integration. The dream of replacing bash with something threadable and
+modern is enticing, but it's fairly impossible in the short-term and thus
+disregarded. Instead, pkgcraft dives directly into the pit of insanity; it
+forks bash[^1] in an effort to achieve its goals.
 
 ### Parallelism problems
 
 Since pkgcraft goes to the extent of forking bash, it also takes on the various
 deficiencies that hinder its use as a library. For a start, bash is not
 thread-safe or reentrant at all. The current design uses an extensive amount of
-global mutables to track both its parser and shell state. While bash uses bison
-which supports generating reentrant parsers, it requires much more extensive
-rework in order for that to be possible.
+global mutables to track both its parser and shell state. Bash uses bison which
+supports generating reentrant parsers, but the shell itself requires extensive
+rework for that to be feasible on a global scale.
 
 With that in mind, in order to support parallel usage a process pool or similar
-design must be used. Unfortunately this currently isn't something that can
-easily be dropped into place like python's multiprocessing pool support.
-Parallelism in rust centers around threading since its memory safety through
-enforced lifetimes highlights threaded execution that's guaranteed data-race
-free. This means that most data parallelism crates similar to rayon only
-support threaded operation, disregarding multi-process support entirely. At
-some point, pkgcraft will have to address this and probably create its own pool
-or parallelized iterator support that reuses processes.
+design must be used. Currently this isn't something that can easily be dropped
+into place like python's multiprocessing pool support. Parallelism in rust
+centers around threading since its memory safety through enforced lifetimes
+highlights threaded execution that's guaranteed data-race free. This means that
+most data parallelism crates similar to rayon only support threaded operation,
+disregarding multi-process support entirely. At some point, pkgcraft will have
+to address this and probably create its own pool or parallelized iterator
+support that reuses processes.
 
 ### Error handling
 
 Beyond parallelism issues, bash leverages longjmp() and frame unwinding for its
-error handling. While this is understandable due to its age, chosen language,
-and minimal dependencies, it doesn't lend itself well to interoperability with
+error handling. This is understandable due to its age, chosen language, and
+minimal dependencies, but it doesn't lend itself well to interoperability with
 rust. For pkgcraft, bash is wrapped where its C code is called from the rust
 library and then it can call back into rust support exported to C. The issue
 with that is unwinding across rust-based frames from C is undefined behavior.
@@ -91,8 +93,8 @@ for all the commands that would either be exposed as functions or other public
 callables. All other internal functionality will be implemented as methods
 on the shell instance wrapping the bash library.
 
-The difficulty comes with sharing state across the rust <-> C border since the
-bulitins, while written in rust, are called from C in bash. Therefore it's not
+The difficulty comes with sharing state across the FFI border since the
+builtins are written in rust, but are called from C in bash. Therefore it's not
 easy to write them in a fashion that allows reuse and inter-builtin calls while
 also passing some form of mutable context parameter. Once again, pkgcraft uses
 a mutable, thread-local instance that builtins are able to import and use
