@@ -13,16 +13,15 @@ attributes hard to wrest from bash's rigid design all suffer. As long as
 compatibility remains important for pkgcraft that decision can't be altered;
 however, that doesn't mean nothing can be done to improve the situation.
 
-One option is to go pkgcore's route, daemonizing IPC support between python and
-bash. This enables sharing bash processes between separate tasks rather than
-relying on a simplistic exec-per-use scheme. Among other effects, this makes
-pkgcore's metadata generation approximately five times faster than its main
-competitor. While providing many marginal improvements, this daemonized
-approach still doesn't escape the restrictive boundaries of regular shell
-usage. Among other downsides, pkgcore requires subshells (meaning additional
-processes) to avoid environment leaks during metadata generation and uses hacky
-RPC signaling across pipes since it's hard to work with anything else natively
-in bash.
+One option is to go pkgcore's route, using IPC with a bash daemon. This enables
+sharing bash processes between separate tasks rather than relying on a
+simplistic exec-per-use scheme. Among other effects, this makes pkgcore's
+metadata generation approximately five times faster than its main competitor.
+While providing many marginal improvements, this daemonized approach still
+doesn't escape the restrictive boundaries of regular shell usage. Among other
+downsides, pkgcore requires subshells (meaning additional processes) to avoid
+environment leaks during metadata generation and uses hacky RPC signaling
+across pipes since it's hard to work with anything else natively in bash.
 
 Pkgcraft aims to move beyond daemon functionality and achieve better lower
 level integration. The dream of replacing bash with something threadable and
