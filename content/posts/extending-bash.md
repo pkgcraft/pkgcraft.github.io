@@ -1,7 +1,7 @@
 ---
 title: "Extending bash"
+subtitle: "Mangling the shell for better integration"
 date: 2022-01-25T01:29:42-07:00
-description: "Mangling the shell for better integration"
 tags: ["bash"]
 ---
 
