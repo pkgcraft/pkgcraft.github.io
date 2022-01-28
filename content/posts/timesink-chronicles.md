@@ -3,7 +3,6 @@ title: "The Timesink Chronicles"
 date: 2022-01-18T16:01:26-07:00
 description: "Or: How I Learned to Stop Procastinating and Waste more Time"
 tags: ["Gentoo"]
-categories: ["pkgcraft"]
 ---
 
 Before beginning these grand timesink chronicles, allow me to review my
