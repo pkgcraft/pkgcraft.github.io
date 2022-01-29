@@ -1,6 +1,6 @@
 ---
 title: "The Timesink Chronicles"
-subtitle: "Or: How I Learned to Stop Procastinating and Waste more Time"
+subtitle: "Or How I Learned to Stop Procastinating and Waste More Time"
 date: 2022-01-18T16:01:26-07:00
 tags: ["Gentoo"]
 ---
