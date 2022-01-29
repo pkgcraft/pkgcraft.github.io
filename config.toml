@@ -144,7 +144,7 @@ uglyURLs = false
     home = ["HTML", "SectionsAtom", "SectionsRSS", "SearchIndex"]
     section = ["HTML"]
     taxonomy = ["HTML"]
-    term = ["HTML"]
+    term = ["HTML", "RSS"]
 
 # Maximum number of items in the Atom & RSS feed
 [services.rss]
