@@ -39,7 +39,7 @@ enableRobotsTXT = true
 # Number of items per page in paginated
 # lists (valid for the `posts` homepage
 # layout in MemE)
-paginate = 3
+paginate = 4
 
 # URL related
 disablePathToLower = false
@@ -1208,7 +1208,7 @@ uglyURLs = false
     enableHighlight = true
 
     enableOverflowY = true
-    maxHeight = 20
+    maxHeight = 100
     # Unit: em
 
     enableCopy = true
