@@ -12,7 +12,7 @@ years I've seen the same algorithms implemented in Python, C, Bash, Go, and
 more at varying levels of success.
 
 Now, I must note that I don't mean to disparage these efforts especially when
-done for fun or to learn a new language; however, if often seems they end up
+done for fun or to learn a new language; however, it often seems they end up
 being used in tools or services used by the wider community. Then as the
 specification slowly evolves and original authors move on, developers are stuck
 maintaining multiple implementations if they want to keep the related tools or
@@ -28,32 +28,32 @@ library supporting language bindings.
 
 Interfacing rust code with another language often requires a C wrapper library
 in order to perform efficiently and/or sidestep rust's lifetime model that
-often clashes with more ownership-based languages. Bindings then build on top
-of this C layer, allowing ignorance of the rust underneath.
+clashes with more ownership-based languages. Bindings then build on top of this
+C layer, allowing ignorance of the rust underneath.
 
 For pkgcraft, this C library is provided via
 [pkgcraft-c](https://github.com/pkgcraft/pkgcraft-c), currently wrapping
 pkgcraft's core depspec functionality (package atoms) in addition to providing
-the initial interface for config, repo, and package interaction.
+the initial interface for config, repo, and package interactions.
 
 For some languages it's also possible to develop bindings or support directly
 in rust. There are a decent number of currently evolving, language-specific
 projects that allow non-rust language development including pyo3 for python,
-rutie for ruby, neon for Node.js, and others. These projects generally wrap all
-the unsafe C compatibility layer internally, allowing simpler development. For
-the most part, I recommend going this route if performance levels and project
-goals can be met.
+rutie for ruby, neon for Node.js, and others. These projects generally wrap the
+unsafe C layer internally, allowing for simpler development. Generally
+speaking, I recommend going this route if performance levels and project goals
+can be met.
 
 Originally, pkgcraft used [pyo3](https://github.com/PyO3) for its python
 bindings. If one is familiar with rust and python, the development experience
-is relatively pleasant and allows relatively simple builds using maturin rather
-then the pile of technical debt that distutils, setuptools, and its extensions
-often feel like when trying to do anything outside the ordinary.
+is relatively pleasant and allows simpler builds using maturin rather then the
+pile of technical debt that distutils, setuptools, and its extensions provide
+when trying to do anything outside the ordinary.
 
 However, pyo3 has a couple, currently unresolved issues that lead me to abandon
-it. First, the speed of its class instantiation is often barely equal or slower
-than a native python implementation, even for simple classes. It should be
-noted this is only important if your design is such that you must support
+it. First, the speed of its class instantiation is barely equal or slower than
+a native python implementation, even for simple classes. It should be noted
+this is only important if your design is such that you must support creating
 thousands of native object instances at a python level. It can be possible to
 lower this overhead by only exposing functionality to interact with large
 groups of rust objects. Not to mention, for most developers coming from native
@@ -61,13 +61,13 @@ python the performance hit won't be overly noticeable. In any case, class
 instantiation overhead will probably decrease as the project matures and more
 work is done on optimization.
 
-More importantly, pyo3 does not support wrapping any object that uses explicit
-lifetimes and exposing it natively in python. This means any struct that
-contains borrowed fields can't be directly exported due to the clashes between
-the memory models and ownership designs of rust and python. It's quite possible
-to work around this, but that often means copying data around in order for the
-python side to obtain ownership. Whether this is acceptable will again depend
-on how much you feel the performance hit.
+More importantly, pyo3 does not support exposing any object that contains
+fields using explicit lifetimes. This means any struct that contains borrowed
+fields can't be directly exported due to the clashes between the memory models
+and ownership designs of rust and python. It's quite possible to work around
+this, but that often means copying data around in order for the python side to
+obtain ownership. Whether this is acceptable will largely depend on how much
+you feel the performance hit.
 
 For my part, having experience writing native extensions using the CPython API
 as well as cython, the workarounds necessary to avoid exposing borrowed objects
@@ -77,8 +77,8 @@ rewrote pkgcraft's python bindings using cython instead which immediately
 raised performance near to levels I was initially expecting; however, the
 downside is quite apparent since the bindings have to manually handle all the
 type conversions and resource deallocation while calling through the C wrapper.
-It feels like a decent amount more work, but I think the performance benefits
-are worth it.
+It's a decent amount more work, but I think the performance benefits are worth
+it.
 
 ### Development
 
