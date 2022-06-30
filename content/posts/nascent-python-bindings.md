@@ -243,15 +243,15 @@ This benchmark creates a list of a million objects for three different atom
 types while timing how long and how much memory (using resident set size) each
 implementation uses.
 
-For static atoms, note the pkgcraft-cached and pkgcore are quite close for the
-lowest memory usage with pkgcore slightly edging ahead probably due to the
-extra fields pkgcraft stores internally to speed up atom comparisons. Another
-point of interest is that pkgcraft's uncached implementation still beats
-pkgcore in processing time, meaning pkgcraft is able to parse and instantiate
-the objects in rust, called via a C wrapper library, and then wrap them into
-native python objects faster than pkgcore can do what basically amounts to
-attribute requests and dictionary lookups. Portage is last by a large margin as
-it doesn't directly cache atom objects.
+For static atoms, note that pkgcraft-cached and pkgcore's memory usage is quite
+close with pkgcore slightly edging ahead probably due to the extra fields
+pkgcraft's rust implementation stores internally to speed up comparisons.
+Another point of interest is that pkgcraft's uncached implementation still
+beats pkgcore in processing time, meaning pkgcraft is able to parse and
+instantiate the objects in rust, called via a C wrapper library, and then wrap
+them into native python objects faster than pkgcore can do what basically
+amounts to attribute requests and dictionary lookups. Portage is last by a
+large margin as it doesn't directly cache atom objects.
 
 With dynamic atoms, no implementation has a memory usage edge since every atom
 is different making caching irrelevant. From this the uncached pkgcraft
