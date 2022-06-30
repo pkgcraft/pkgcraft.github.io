@@ -256,9 +256,10 @@ large margin as it doesn't directly cache atom objects.
 With dynamic atoms, no implementation has a memory usage edge since every atom
 is different making caching irrelevant. From this the uncached pkgcraft
 implementation has the edge since it doesn't perform cache lookups or store a
-cache. Pkgcore's memory usage is comparatively respectable, but uses about an
-order of magnitude more processing time. Portage is again last by a increased
-margin and appears to perform inefficiently when storing more complex atoms.
+cache. Pkgcore's memory usage is comparatively respectable, but it uses about
+an order of magnitude more processing time. Portage is again last by a
+increased margin and appears to perform inefficiently when storing more complex
+atoms.
 
 Finally, random atoms try to model closer to what is found across the tree in
 terms of cache hits. With this result, it appears that using pkgcraft's cached
@@ -270,22 +271,23 @@ overlap.
 From the rough benchmarks above, it seems apparent both pkgcore and portage
 could decrease their overall processing time and memory usage by moving to
 using package atom support from pkgcraft python bindings. While I'm unsure how
-much of a factor overall such a change would cause, it should at least be
+much of a performance difference it would make, it should at least be
 noticeably worthwhile when processing large amounts of data, e.g. scanning the
 entire tree with pkgcheck or sorting atoms during large dependency resolutions.
 
-In terms of feasibility, it's probably easier to inject the current pkgcraft
-bindings into portage since its atom support subclasses string objects while
-pkgcore's subclasses an internal restriction class, but both should be possible
-with some rework. Realistically speaking, neither is likely to occur because
-both projects lack maintainers with the required combination of skill, time,
-and interest to do it and in doing so would generally restrict the project to
-supporting fewer targets due to rust's current lack of support for older
-architectures which may be somewhat resolved if a viable GCC rust
-implementation is ever released.
+In terms of feasibility, it's probably easier to inject the pkgcraft bindings
+into portage since its atom support subclasses string objects while pkgcore's
+subclasses an internal restriction class, but both should be possible with some
+redesign. Realistically speaking, neither is likely to occur because both
+projects lack maintainers with the required combination of skill, time, and
+interest to perform the rework. In addition, currently doing so in a
+non-optional fashion would generally restrict projects to fewer targets due to
+rust's lack of support for older architectures, but this downside may be
+somewhat resolved if a viable GCC rust implementation is released in the
+future.
 
-Other than python, currently pkgcraft has more basic support available for go.
-As the core library gains more features, I'll try to keep working on exposing
-the same functionality via bindings since I think initial interactions with
-pkgcraft may be easiest when leveraging it for data processing from scripting
-languages.
+Other than python, pkgcraft has more basic support available for go supporting
+package atom and version object interactions. As the core library gains more
+features, I'll try to keep working on exposing the same functionality via
+bindings since I think initial interactions with pkgcraft may be easiest when
+leveraging it for data processing from scripting languages.
