@@ -51,23 +51,23 @@ pile of technical debt that distutils, setuptools, and its extensions provide
 when trying to do anything outside the ordinary.
 
 However, pyo3 has a couple, currently unresolved issues that lead me to abandon
-it. First, the speed of its class instantiation is barely equal or slower than
-a native python implementation, even for simple classes. It should be noted
-this is only important if your design is such that you must support creating
-thousands of native object instances at a python level. It can be possible to
-lower this overhead by only exposing functionality to interact with large
-groups of rust objects. Not to mention, for most developers coming from native
-python the performance hit won't be overly noticeable. In any case, class
-instantiation overhead will probably decrease as the project matures and more
-work is done on optimization.
+it. First, the speed of its class instantiation is slower than then native
+python implementation, even for simple classes. It should be noted this is only
+important if your design involves creating thousands of native object instances
+at a python level. It's often preferable to avoid this overhead by exposing
+functionality to interact with large groups of rust objects. In addition, for
+most developers coming from native python the performance hit won't be overly
+noticeable. In any case, class instantiation overhead will probably decrease as
+the project matures and more work is done on optimization.
 
 More importantly, pyo3 does not support exposing any object that contains
 fields using explicit lifetimes. This means any struct that contains borrowed
 fields can't be directly exported due to the clashes between the memory models
 and ownership designs of rust and python. It's quite possible to work around
-this, but that often means copying data around in order for the python side to
-obtain ownership. Whether this is acceptable will largely depend on how much
-you feel the performance hit.
+this, but that often means copying data in order for the python side to obtain
+ownership or redesigning the data structures used on the rust side. Whether
+this is acceptable will depend on how large the performance hit is or how much
+work the redesign takes.
 
 For my part, having experience writing native extensions using the CPython API
 as well as cython, the workarounds necessary to avoid exposing borrowed objects
@@ -114,9 +114,9 @@ $ tox -e python
 
 When doing development on bindings leveraging a C library it's also valuable to
 run the same testsuite under valgrind looking for the seemingly inevitable
-memory leaks, seemingly exacerbated by rust requiring all allocations to be
-returned in order to be freed safely since it historically didn't use the
-system allocator. For pkgcraft, this is provided via another tox target:
+memory leaks, exacerbated by rust requiring all allocations to be returned in
+order to be freed safely since it historically didn't use the system allocator.
+For pkgcraft, this is provided via another tox target:
 
 ```bash
 $ tox -e valgrind
@@ -283,3 +283,9 @@ and interest to do it and in doing so would generally restrict the project to
 supporting fewer targets due to rust's current lack of support for older
 architectures which may be somewhat resolved if a viable GCC rust
 implementation is ever released.
+
+Other than python, currently pkgcraft has more basic support available for go.
+As the core library gains more features, I'll try to keep working on exposing
+the same functionality via bindings since I think initial interactions with
+pkgcraft may be easiest when leveraging it for data processing from scripting
+languages.
