@@ -1,6 +1,6 @@
 ---
 title: "Binding the World"
-subtitle: "Developing python language bindings for pkgcraft"
+subtitle: "Developing python bindings for pkgcraft"
 date: 2022-06-29T11:29:42-07:00
 tags: ["python", "pkgcraft", "Gentoo"]
 ---
