@@ -83,7 +83,7 @@ it.
 ### Development
 
 First, the tools for building the code should be installed. This includes a
-recent rust compiler and C compiler. I leave it up to the reader to leverage
+recent rust compiler and C compiler. I leave it up to the reader to make use of
 `rustup` and/or their distro's package manager to install the required build
 tools (and others such as `git` that are implied).
 
@@ -112,11 +112,11 @@ $ cd pkgcraft-python
 $ tox -e python
 ```
 
-When doing development on bindings leveraging a C library it's also valuable to
-run the same testsuite under valgrind looking for the seemingly inevitable
-memory leaks, exacerbated by rust requiring all allocations to be returned in
-order to be freed safely since it historically didn't use the system allocator.
-For pkgcraft, this is provided via another tox target:
+When developing bindings built on top of a C library it's wise to run the same
+testsuite under valgrind looking for seemingly inevitable memory leaks,
+exacerbated by rust requiring all allocations to be returned in order to be
+freed safely since it historically didn't use the system allocator. For
+pkgcraft, this is provided via another tox target:
 
 ```bash
 $ tox -e valgrind
@@ -136,8 +136,8 @@ nascent python bindings with pkgcore and portage. Currently these only focus on
 atom object instantiation, but may be extended to include other functionality
 if the API access isn't too painful for pkgcore and/or portage.
 
-To run the processing time benchmarks that leverage
-[pytest-benchmark](https://pypi.org/project/pytest-benchmark) use:
+To run the processing time benchmarks that use
+[pytest-benchmark](https://pypi.org/project/pytest-benchmark):
 
 ```bash
 $ tox -e bench
@@ -244,27 +244,27 @@ types while timing how long and how much memory (using resident set size) each
 implementation uses.
 
 For static atoms, note that pkgcraft-cached and pkgcore's memory usage is quite
-close with pkgcore slightly edging ahead probably due to the extra fields
-pkgcraft's rust implementation stores internally to speed up comparisons.
-Another point of interest is that pkgcraft's uncached implementation still
-beats pkgcore in processing time, meaning pkgcraft is able to parse and
-instantiate the objects in rust, called via a C wrapper library, and then wrap
-them into native python objects faster than pkgcore can do what basically
-amounts to attribute requests and dictionary lookups. Portage is last by a
-large margin as it doesn't directly cache atom objects.
+close with pkgcore slightly edging ahead probably due to the extra data
+pkgcraft stores internally to speed up comparisons. Another point of interest
+is that the uncached implementation still beats pkgcore in processing time.
+This is because the underlying rust implementation has its own cache allowing
+it to skip unnecessary parsing and leaving the majority of overhead to cython's
+instantiation speed. Portage is last by a large margin since it doesn't
+directly cache atom objects.
 
-With dynamic atoms, no implementation has a memory usage edge since every atom
-is different making caching irrelevant. From this the uncached pkgcraft
-implementation has the edge since it doesn't perform cache lookups or store a
-cache. Pkgcore's memory usage is comparatively respectable, but it uses about
-an order of magnitude more processing time. Portage is again last by a
-increased margin and appears to perform inefficiently when storing more complex
-atoms.
+For dynamic atoms every atom is different making caching irrelevant so no
+implementation has a substantial memory usage edge. With caching made
+worthless, the uncached pkgcraft implementation is the fastest as it has the
+least cache overhead. Pkgcore's memory usage is comparatively respectable, but
+it uses about an order of magnitude more processing time for parsing. Portage
+is again last by a increased margin and appears to perform inefficiently when
+storing more complex atoms.
 
 Finally, random atoms try to model closer to what is found across the tree in
-terms of cache hits. With this result, it appears that using pkgcraft's cached
-implementation probably is a good idea for large sets of atoms with occasional
-overlap.
+terms of cache hits. As the results show, using cached implementations probably
+is a good idea for large sets of atoms with occasional overlap in order to save
+both processing time and memory usage; otherwise, both attributes suffer as
+seen from portage's uncached implementation results.
 
 ### Looking to the future
 
