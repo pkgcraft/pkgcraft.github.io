@@ -87,17 +87,17 @@ recent rust compiler and C compiler. I leave it up to the reader to make use of
 `rustup` and/or their distro's package manager to install the required build
 tools (and others such as `git` that are implied).
 
-Next, the pkgcraft code must be pulled down. The easiest way to do this is to
+Next, the code must be pulled down. The easiest way to do this is to
 recursively clone pkgcraft-workspace which should include semi-recent
-submodules for all the pkgcraft projects:
+submodules for all pkgcraft projects:
 
 ```bash
 git clone --recursive-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
 cd pkgcraft-workspace
 ```
 
-From this workspace, the pkgcraft-c project can be built and various shell
-variables set in order to build python bindings via the following command:
+From this workspace, pkgcraft-c can be built and various shell variables set in
+order to build python bindings via the following command:
 
 ```bash
 $ source ./build pkgcraft-c
@@ -189,18 +189,27 @@ test_bench_atom_sorting_worst_case[pkgcore-atom]    <span class="ansi31"></span>
 </pre>
 {{< /rawhtml >}}
 
-From these results the pkgcraft python bindings instantiate atom objects about
-5-6x faster than pkgcore and about 10x faster than portage. For static atoms
-when using the cached pkgcraft implementation (for object reuse) this increases
-to about 150x faster than portage meaning that portage should probably look
-into using an LRU cache for directly created atom objects. With respect to
-pkgcore's static result, it also appears to not use caching; however, it does
-support atom instance caching internally so the benchmark is avoiding that
-somehow.
+As seen above, pkgcraft is able to instantiate atom objects about 5-6x faster
+than pkgcore and about 10x faster than portage. For static atoms when using the
+cached implementation this increases to about 150x faster, meaning portage
+should look into using an LRU cache for directly created atom objects. With
+respect to pkgcore's static result, it also appears to not use caching;
+however, it does support atom instance caching internally so the benchmark is
+avoiding that somehow.
 
 When comparing sorting, pkgcraft is well over two orders of magnitude ahead of
 pkgcore and I imagine portage would fare even worse, but it doesn't natively
 support atom object comparisons so isn't included here.
+
+Beyond processing time it's often useful to track memory use, especially for
+languages such as python that are designed more for ease of development than
+memory efficiency. There are a number of different techniques to track memory
+use such as projects like [guppy3](https://pypi.org/project/guppy3/) but they
+often work with native python objects, ignoring or misrepresenting allocations
+done in underlying implementations. Instead, pkgcraft includes a simple script
+that creates a list of a million objects for three different atom types while
+tracking elapsed time and overall memory use (using resident set size) in
+separate processes.
 
 To run the memory benchmarks use:
 
@@ -208,7 +217,7 @@ To run the memory benchmarks use:
 $ tox -e membench
 ```
 
-Which currently produces output similar to:
+Which produces output similar to:
 
 ```
 Static atoms (1000000)
@@ -238,10 +247,6 @@ pkgcraft-cached      21.3 MB    (1.30s)
 pkgcore              20.9 MB    (2.67s)
 portage              3.6 GB     (46.77s)
 ```
-
-This benchmark creates a list of a million objects for three different atom
-types while timing how long and how much memory (using resident set size) each
-implementation uses.
 
 For static atoms, note that pkgcraft-cached and pkgcore's memory usage is quite
 close with pkgcore slightly edging ahead probably due to the extra data
@@ -274,6 +279,14 @@ using package atom support from pkgcraft python bindings. While I'm unsure how
 much of a performance difference it would make, it should at least be
 noticeably worthwhile when processing large amounts of data, e.g. scanning the
 entire tree with pkgcheck or sorting atoms during large dependency resolutions.
+
+It's also clear that using cython's [extension
+types](https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html)
+and C support on top of rust code yield relatively sizeable wins over native
+python code. From my perspective, it seems worthwhile to implement all core
+functionality in a similar fashion for projects that last decades like portage
+already has. The downside of implementing support in a more difficult language
+should decrease the longer a project remains viable.
 
 In terms of feasibility, it's probably easier to inject the pkgcraft bindings
 into portage since its atom support subclasses string objects while pkgcore's
