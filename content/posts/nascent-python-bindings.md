@@ -249,21 +249,21 @@ portage              3.6 GB     (46.77s)
 ```
 
 For static atoms, note that pkgcraft-cached and pkgcore's memory usage is quite
-close with pkgcore slightly edging ahead probably due to the extra data
-pkgcraft stores internally to speed up comparisons. Another point of interest
-is that the uncached implementation still beats pkgcore in processing time.
-This is because the underlying rust implementation has its own cache allowing
-it to skip unnecessary parsing and leaving the majority of overhead to cython's
-instantiation speed. Portage is last by a large margin since it doesn't
-directly cache atom objects.
+close with pkgcore slightly edging ahead due to the extra data pkgcraft stores
+to speed up comparisons. Another point of interest is that the uncached
+implementation still beats pkgcore in processing time. This is because the
+underlying rust implementation has its own cache allowing it to skip
+unnecessary parsing, leaving the majority of overhead from cython's object
+instantiation. Portage is last by a large margin since it doesn't directly
+cache atom objects.
 
-For dynamic atoms every atom is different making caching irrelevant so no
-implementation has a substantial memory usage edge. With caching made
-worthless, the uncached pkgcraft implementation is the fastest as it has the
-least cache overhead. Pkgcore's memory usage is comparatively respectable, but
-it uses about an order of magnitude more processing time for parsing. Portage
-is again last by a increased margin and appears to perform inefficiently when
-storing more complex atoms.
+Every dynamic atom is different making caching irrelevant so no implementation
+has a substantial memory usage edge. Without cache speedups, the uncached
+pkgcraft implementation is the fastest as it has the least overhead. Pkgcore's
+memory usage is comparatively respectable, but uses about an order of magnitude
+more processing time for parsing and instantiation. Portage is again last by an
+increased margin and appears to perform inefficiently when storing more complex
+atoms.
 
 Finally, random atoms try to model closer to what is found across the tree in
 terms of cache hits. As the results show, using cached implementations probably
@@ -274,7 +274,7 @@ seen from portage's uncached implementation results.
 ### Looking to the future
 
 From the rough benchmarks above, it seems apparent both pkgcore and portage
-could decrease their overall processing time and memory usage by moving to
+could decrease their overall processing time and/or memory usage by moving to
 using package atom support from pkgcraft python bindings. While I'm unsure how
 much of a performance difference it would make, it should at least be
 noticeably worthwhile when processing large amounts of data, e.g. scanning the
