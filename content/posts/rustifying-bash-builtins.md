@@ -108,7 +108,7 @@ do this is to recursively clone pkgcraft-workspace which should include
 semi-recent submodule checkouts for all the subprojects:
 
 ```bash
-git clone --recursive-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
+git clone --recurse-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
 cd pkgcraft-workspace
 ```
 
