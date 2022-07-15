@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>python on Pkgcraft</title><link>https://pkgcraft.github.io/tags/python/</link><description>Recent content in python on Pkgcraft</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</copyright><lastBuildDate>Wed, 29 Jun 2022 11:29:42 -0700</lastBuildDate><atom:link href="https://pkgcraft.github.io/tags/python/index.xml" rel="self" type="application/rss+xml"/><item><title>Binding the World: Developing python bindings for pkgcraft</title><link>https://pkgcraft.github.io/posts/nascent-python-bindings/</link><pubDate>Wed, 29 Jun 2022 11:29:42 -0700</pubDate><guid>https://pkgcraft.github.io/posts/nascent-python-bindings/</guid><description>&lt;p>One of Gentoo&amp;rsquo;s major weaknesses is the lack of a shared implementation that
+natively supports bindings to other languages for core, specification-level
+features such as dependency format parsing. Due to this deficiency, over the
+years I&amp;rsquo;ve seen the same algorithms implemented in Python, C, Bash, Go, and
+more at varying levels of success.&lt;/p>
+&lt;p>Now, I must note that I don&amp;rsquo;t mean to disparage these efforts especially when
+done for fun or to learn a new language; however, it often seems they end up
+being used in tools or services used by the wider community. Then as the
+specification slowly evolves and original authors move on, developers are stuck
+maintaining multiple implementations if they want to keep the related tools or
+services relevant.&lt;/p>
+&lt;p>In an ideal world, the canonical implementation for a core feature set is
+written in a language that can be easily bound by other languages offering
+developers the choice to reuse this support without having to write their own.
+To exhibit this possibility, one of pkgcraft&amp;rsquo;s goals is to act as a core
+library supporting language bindings.&lt;/p>
+&lt;h3 id="design">Design&lt;/h3>
+&lt;p>Interfacing rust code with another language often requires a C wrapper library
+in order to perform efficiently and/or sidestep rust&amp;rsquo;s lifetime model that
+clashes with more ownership-based languages. Bindings then build on top of this
+C layer, allowing ignorance of the rust underneath.&lt;/p>
+&lt;p>For pkgcraft, this C library is provided via
+&lt;a href="https://github.com/pkgcraft/pkgcraft-c">pkgcraft-c&lt;/a>, currently wrapping
+pkgcraft&amp;rsquo;s core depspec functionality (package atoms) in addition to providing
+the initial interface for config, repo, and package interactions.&lt;/p>
+&lt;p>For some languages it&amp;rsquo;s also possible to develop bindings or support directly
+in rust. There are a decent number of currently evolving, language-specific
+projects that allow non-rust language development including pyo3 for python,
+rutie for ruby, neon for Node.js, and others. These projects generally wrap the
+unsafe C layer internally, allowing for simpler development. Generally
+speaking, I recommend going this route if performance levels and project goals
+can be met.&lt;/p>
+&lt;p>Originally, pkgcraft used &lt;a href="https://github.com/PyO3">pyo3&lt;/a> for its python
+bindings. If one is familiar with rust and python, the development experience
+is relatively pleasant and allows simpler builds using maturin rather then the
+pile of technical debt that distutils, setuptools, and its extensions provide
+when trying to do anything outside the ordinary.&lt;/p>
+&lt;p>However, pyo3 has a couple, currently unresolved issues that lead me to abandon
+it. First, the speed of its class instantiation is slower than then native
+python implementation, even for simple classes. It should be noted this is only
+important if your design involves creating thousands of native object instances
+at a python level. It&amp;rsquo;s often preferable to avoid this overhead by exposing
+functionality to interact with large groups of rust objects. In addition, for
+most developers coming from native python the performance hit won&amp;rsquo;t be overly
+noticeable. In any case, class instantiation overhead will probably decrease as
+the project matures and more work is done on optimization.&lt;/p>
+&lt;p>More importantly, pyo3 does not support exposing any object that contains
+fields using explicit lifetimes. This means any struct that contains borrowed
+fields can&amp;rsquo;t be directly exported due to the clashes between the memory models
+and ownership designs of rust and python. It&amp;rsquo;s quite possible to work around
+this, but that often means copying data in order for the python side to obtain
+ownership or redesigning the data structures used on the rust side. Whether
+this is acceptable will depend on how large the performance hit is or how much
+work the redesign takes.&lt;/p>
+&lt;p>For my part, having experience writing native extensions using the CPython API
+as well as cython, the workarounds necessary to avoid exposing borrowed objects
+weren&amp;rsquo;t worth the effort, especially because pkgcraft requires a C API anyway
+to support C itself and languages lacking compatibility layer projects. Thus I
+rewrote pkgcraft&amp;rsquo;s python bindings using cython instead which immediately
+raised performance near to levels I was initially expecting; however, the
+downside is quite apparent since the bindings have to manually handle all the
+type conversions and resource deallocation while calling through the C wrapper.
+It&amp;rsquo;s a decent amount more work, but I think the performance benefits are worth
+it.&lt;/p>
+&lt;h3 id="development">Development&lt;/h3>
+&lt;p>First, the tools for building the code should be installed. This includes a
+recent rust compiler and C compiler. I leave it up to the reader to make use of
+&lt;code>rustup&lt;/code> and/or their distro&amp;rsquo;s package manager to install the required build
+tools (and others such as &lt;code>git&lt;/code> that are implied).&lt;/p>
+&lt;p>Next, the code must be pulled down. The easiest way to do this is to
+recursively clone pkgcraft-workspace which should include semi-recent
+submodules for all pkgcraft projects:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git clone --recurse-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">cd&lt;/span> pkgcraft-workspace
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From this workspace, pkgcraft-c can be built and various shell variables set in
+order to build python bindings via the following command:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">source&lt;/span> ./build pkgcraft-c
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>This builds pkgcraft into a shared library that is exposed to the python build
+via setting &lt;code>$LD_LIBRARY_PATH&lt;/code> and &lt;code>$PKG_CONFIG_PATH&lt;/code>. Once that completes the
+python bindings can be built and tested via tox:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">cd&lt;/span> pkgcraft-python
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ tox -e python
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>When developing bindings built on top of a C library it&amp;rsquo;s wise to run the same
+testsuite under valgrind looking for seemingly inevitable memory leaks,
+exacerbated by rust requiring all allocations to be returned in order to be
+freed safely since it historically didn&amp;rsquo;t use the system allocator. For
+pkgcraft, this is provided via another tox target:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e valgrind
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If you&amp;rsquo;re familiar with valgrind, we mainly care about the definitely and
+indirectly lost categories of memory leaks, the other types relate to global
+objects or caches that aren&amp;rsquo;t explicitly deallocated on exit. The valgrind
+target for tox should error out if any memory leaks are detected so if it
+completes successfully no leaks were detected.&lt;/p>
+&lt;h3 id="benchmarking-vs-pkgcore-and-portage">Benchmarking vs pkgcore and portage&lt;/h3>
+&lt;p>Stepping away from regular development towards more interesting data, pkgcraft
+provides rough processing and memory benchmark suites in order to compare its
+nascent python bindings with pkgcore and portage. Currently these only focus on
+atom object instantiation, but may be extended to include other functionality
+if the API access isn&amp;rsquo;t too painful for pkgcore and/or portage.&lt;/p>
+&lt;p>To run the processing time benchmarks that use
+&lt;a href="https://pypi.org/project/pytest-benchmark">pytest-benchmark&lt;/a>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e bench
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>For a summary of benchmark results only including the mean and standard
+deviation:&lt;/p>
+&lt;style type="text/css">
+.ansi2html-content { display: inline; white-space: pre-wrap; word-wrap: break-word; }
+.ansi1 { font-weight: bold; }
+.ansi31 { color: #aa0000; }
+.ansi32 { color: #00aa00; }
+.ansi33 { color: #aa5500; }
+&lt;/style>
+&lt;pre class="ansi2html-content">
+&lt;span class="ansi33">----------------- benchmark 'test_bench_atom_random': 4 tests ------------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">--------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_random[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 4.5395 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.3722 (1.0) &lt;/span>
+test_bench_atom_random[pkgcraft-cached] &lt;span class="ansi1"> 6.2360 (1.37) &lt;/span>&lt;span class="ansi1"> 1.3386 (3.60) &lt;/span>
+test_bench_atom_random[pkgcore-atom] &lt;span class="ansi1"> 30.9767 (6.82) &lt;/span>&lt;span class="ansi1"> 1.1428 (3.07) &lt;/span>
+test_bench_atom_random[portage-Atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 50.2636 (11.07) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 19.7562 (53.07) &lt;/span>
+&lt;span class="ansi33">--------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">--------------------- benchmark 'test_bench_atom_static': 4 tests ----------------------&lt;/span>
+Name (time in ns) Mean StdDev
+&lt;span class="ansi33">----------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_static[pkgcraft-cached] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 217.2820 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 5.9821 (1.0) &lt;/span>
+test_bench_atom_static[pkgcraft-Atom] &lt;span class="ansi1"> 725.2229 (3.34) &lt;/span>&lt;span class="ansi1"> 41.6775 (6.97) &lt;/span>
+test_bench_atom_static[pkgcore-atom] &lt;span class="ansi1"> 28,331.4369 (130.39) &lt;/span>&lt;span class="ansi1"> 942.0003 (157.47) &lt;/span>
+test_bench_atom_static[portage-Atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 33,794.6625 (155.53) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 14,358.8390 (&amp;gt;1000.0)&lt;/span>
+&lt;span class="ansi33">----------------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">----------------- benchmark 'test_bench_atom_sorting_best_case': 2 tests ----------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">-----------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_sorting_best_case[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 6.1195 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.2011 (1.0) &lt;/span>
+test_bench_atom_sorting_best_case[pkgcore-atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 936.9403 (153.11) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 5.5534 (27.61) &lt;/span>
+&lt;span class="ansi33">-----------------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">---------------- benchmark 'test_bench_atom_sorting_worst_case': 2 tests -----------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">------------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_sorting_worst_case[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 6.2702 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.3301 (1.0) &lt;/span>
+test_bench_atom_sorting_worst_case[pkgcore-atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 924.1410 (147.39) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 6.9942 (21.19) &lt;/span>
+&lt;span class="ansi33">------------------------------------------------------------------------------------------&lt;/span>
+&lt;/pre>
+&lt;p>As seen above, pkgcraft is able to instantiate atom objects about 5-6x faster
+than pkgcore and about 10x faster than portage. For static atoms when using the
+cached implementation this increases to about 150x faster, meaning portage
+should look into using an LRU cache for directly created atom objects. With
+respect to pkgcore&amp;rsquo;s static result, it also appears to not use caching;
+however, it does support atom instance caching internally so the benchmark is
+avoiding that somehow.&lt;/p>
+&lt;p>When comparing sorting, pkgcraft is well over two orders of magnitude ahead of
+pkgcore and I imagine portage would fare even worse, but it doesn&amp;rsquo;t natively
+support atom object comparisons so isn&amp;rsquo;t included here.&lt;/p>
+&lt;p>Beyond processing time it&amp;rsquo;s often useful to track memory use, especially for
+languages such as python that are designed more for ease of development than
+memory efficiency. There are a number of different techniques to track memory
+use such as projects like &lt;a href="https://pypi.org/project/guppy3/">guppy3&lt;/a> but they
+often work with native python objects, ignoring or misrepresenting allocations
+done in underlying implementations. Instead, pkgcraft includes a simple script
+that creates a list of a million objects for three different atom types while
+tracking elapsed time and overall memory use (using resident set size) in
+separate processes.&lt;/p>
+&lt;p>To run the memory benchmarks use:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e membench
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Which produces output similar to:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Static atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 474.2 MB (0.94s)
+pkgcraft-cached 8.7 MB (0.27s)
+pkgcore 8.4 MB (1.12s)
+portage 795.5 MB (10.62s)
+Dynamic atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 955.2 MB (2.93s)
+pkgcraft-cached 957.9 MB (3.56s)
+pkgcore 1.3 GB (31.01s)
+portage 4.0 GB (56.22s)
+Random atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 945.4 MB (3.75s)
+pkgcraft-cached 21.3 MB (1.30s)
+pkgcore 20.9 MB (2.67s)
+portage 3.6 GB (46.77s)
+&lt;/code>&lt;/pre>&lt;p>For static atoms, note that pkgcraft-cached and pkgcore&amp;rsquo;s memory usage is quite
+close with pkgcore slightly edging ahead due to the extra data pkgcraft stores
+to speed up comparisons. Another point of interest is that the uncached
+implementation still beats pkgcore in processing time. This is because the
+underlying rust implementation has its own cache allowing it to skip
+unnecessary parsing, leaving the majority of overhead from cython&amp;rsquo;s object
+instantiation. Portage is last by a large margin since it doesn&amp;rsquo;t directly
+cache atom objects.&lt;/p>
+&lt;p>Every dynamic atom is different making caching irrelevant so no implementation
+has a substantial memory usage edge. Without cache speedups, the uncached
+pkgcraft implementation is the fastest as it has the least overhead. Pkgcore&amp;rsquo;s
+memory usage is comparatively respectable, but uses about an order of magnitude
+more processing time for parsing and instantiation. Portage is again last by an
+increased margin and appears to perform inefficiently when storing more complex
+atoms.&lt;/p>
+&lt;p>Finally, random atoms try to model closer to what is found across the tree in
+terms of cache hits. As the results show, using cached implementations probably
+is a good idea for large sets of atoms with occasional overlap in order to save
+both processing time and memory usage; otherwise, both attributes suffer as
+seen from portage&amp;rsquo;s uncached implementation results.&lt;/p>
+&lt;h3 id="looking-to-the-future">Looking to the future&lt;/h3>
+&lt;p>From the rough benchmarks above, it seems apparent both pkgcore and portage
+could decrease their overall processing time and/or memory usage by moving to
+using package atom support from pkgcraft python bindings. While I&amp;rsquo;m unsure how
+much of a performance difference it would make, it should at least be
+noticeably worthwhile when processing large amounts of data, e.g. scanning the
+entire tree with pkgcheck or sorting atoms during large dependency resolutions.&lt;/p>
+&lt;p>It&amp;rsquo;s also clear that using cython&amp;rsquo;s &lt;a href="https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html">extension
+types&lt;/a>
+and C support on top of rust code yield relatively sizeable wins over native
+python code. From my perspective, it seems worthwhile to implement all core
+functionality in a similar fashion for projects that last decades like portage
+already has. The downside of implementing support in a more difficult language
+should decrease the longer a project remains viable.&lt;/p>
+&lt;p>In terms of feasibility, it&amp;rsquo;s probably easier to inject the pkgcraft bindings
+into portage since its atom support subclasses string objects while pkgcore&amp;rsquo;s
+subclasses an internal restriction class, but both should be possible with some
+redesign. Realistically speaking, neither is likely to occur because both
+projects lack maintainers with the required combination of skill, time, and
+interest to perform the rework. In addition, currently doing so in a
+non-optional fashion would generally restrict projects to fewer targets due to
+rust&amp;rsquo;s lack of support for older architectures, but this downside may be
+somewhat resolved if a viable GCC rust implementation is released in the
+future.&lt;/p>
+&lt;p>Other than python, pkgcraft has more basic support available for go supporting
+package atom and version object interactions. As the core library gains more
+features, I&amp;rsquo;ll try to keep working on exposing the same functionality via
+bindings since I think initial interactions with pkgcraft may be easiest when
+leveraging it for data processing from scripting languages.&lt;/p></description></item></channel></rss>

@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>bash on Pkgcraft</title><link>https://pkgcraft.github.io/tags/bash/</link><description>Recent content in bash on Pkgcraft</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</copyright><lastBuildDate>Wed, 08 Jun 2022 13:08:38 -0600</lastBuildDate><atom:link href="https://pkgcraft.github.io/tags/bash/index.xml" rel="self" type="application/rss+xml"/><item><title>Rustifying Bash: Writing dynamic builtins in rust</title><link>https://pkgcraft.github.io/posts/rustifying-bash-builtins/</link><pubDate>Wed, 08 Jun 2022 13:08:38 -0600</pubDate><guid>https://pkgcraft.github.io/posts/rustifying-bash-builtins/</guid><description>&lt;p>In the previous post on extending bash, using builtins was mentioned as a way
+to improve extensibility. Rather than writing native bash functions or spawning
+processes to run external tools, pkgcraft implements all its bash command
+support using builtins.&lt;/p>
+&lt;p>For example, the &lt;code>inherit&lt;/code> command used to load eclasses, &lt;code>die&lt;/code>, and all
+install-related functionality (e.g. &lt;code>doins&lt;/code>) are all implemented as
+builtins&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. This allows for a more seamless experience compared to pkgcore
+which implements all of this natively in bash using a simple daemon that sends
+messages via shared fds to communicate between the python and bash sides.&lt;/p>
+&lt;p>Note that these builtins are not readily available for use in regular bash
+since most are highly Gentoo specific, often rely on underlying build state,
+and aren&amp;rsquo;t built in a fashion that can be externally exposed. However, the
+design work done to support bash in rust also allows creating builtins
+compatible with standard bash.&lt;/p>
+&lt;p>For those interested in bash and rust, the following walkthrough explains how
+dynamic builtins work, describes some of the rust support required for
+interoperability, and discusses why they&amp;rsquo;re useful.&lt;/p>
+&lt;h2 id="dynamic-builtin-basics">Dynamic builtin basics&lt;/h2>
+&lt;p>For background, bash includes builtins used daily by many, e.g. &lt;code>cd&lt;/code>, &lt;code>echo&lt;/code>,
+and &lt;code>source&lt;/code> are all builtins. In addition to these, external builtins can be
+loaded dynamically from shared object files via &lt;code>enable&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f path/to/shared/object.so builtin_name
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>which uses &lt;code>dlopen&lt;/code> to open the shared object and &lt;code>dlsym&lt;/code> to load the symbol
+for the related builtin, if it exists. The builtin is then registered
+internally as dynamically loaded and can be used until it is either
+unloaded or the shell exits.&lt;/p>
+&lt;p>To remove a previously loaded builtin use:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -d builtin_name
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Running a builtin is the same as running most other commands:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ builtin_name args to pass
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>In terms of default execution precedence, similarly named functions come first,
+then builtins, and finally external binaries. This means if an in scope
+function and loaded builtin have the same name, running that name in the shell
+will run the function and not the builtin.&lt;/p>
+&lt;p>The version of bash installed by most distros should support dynamic builtins
+inherently because bash itself doesn&amp;rsquo;t provide a disable mechanism; however,
+Gentoo manually hacks the configure script to disable support by default. In
+order to enable it, make sure to build bash with the &lt;code>plugins&lt;/code> USE flag
+enabled.&lt;/p>
+&lt;p>Builtins have access to nearly all bash&amp;rsquo;s underlying API; however, they are
+mainly limited to running in command form using simple string arguments. In
+other words, scoped builtins that form more complex expressions, e.g. bash&amp;rsquo;s
+conditional expression &lt;code>[[ ]]&lt;/code>, generally require parser and/or grammar level
+changes that aren&amp;rsquo;t possible to achieve in a basic builtin.&lt;/p>
+&lt;h2 id="creating-builtins-in-rust">Creating builtins in rust&lt;/h2>
+&lt;p>One of the tricky parts supporting dynamic builtins in rust is that it has no
+support of life before main or lib init similar to C. Therefore, we must
+determine some way to provide external symbols for builtin structs that can&amp;rsquo;t
+be initialized globally before init. To do this rust relies on linker support
+for runtime initialization via &lt;code>DT_INIT_ARRAY&lt;/code> for ELF objects (and similar on
+other platforms). This allows running a specified function during the
+library loading process that replaces Option wrapped, globally defined,
+static mutables with their actual builtin structs required by bash&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>.&lt;/p>
+&lt;p>Beyond building the shared objects, pkgcraft provides support for interacting
+with bash&amp;rsquo;s C API in rust via &lt;a href="https://github.com/pkgcraft/scallop">scallop&lt;/a>.
+This enables performing most anything that can be done natively in bash. For
+example, bash variables can be bound, unbound, and marked as readonly. However,
+it should be noted that scallop is a young project so it only supports what
+pkgcraft has needed thus far, has many rough edges, and doesn&amp;rsquo;t come close to
+wrapping all of bash&amp;rsquo;s exported API.&lt;/p>
+&lt;p>In addition to scallop, pkgcraft also provides pkgcraft-bash which is mainly an
+example project to create dynamic builtins. For our purposes, we&amp;rsquo;ll be
+exploring scallop and pkgcraft-bash while using them to demonstrate how
+rust-based builtins work.&lt;/p>
+&lt;h4 id="development-environment">Development environment&lt;/h4>
+&lt;p>First, the required tools for building the code should be installed. This
+includes a recent rust compiler, C compiler, meson, and a version of bash that
+supports loading dynamic builtins from shared objects. I leave it up to the
+reader to leverage &lt;code>rustup&lt;/code> and/or their distro&amp;rsquo;s package manager to install
+the required build tools (and others such as &lt;code>git&lt;/code> that are implied
+requirements).&lt;/p>
+&lt;p>Next, the required pkgcraft subprojects must be pulled down. The easiest way to
+do this is to recursively clone pkgcraft-workspace which should include
+semi-recent submodule checkouts for all the subprojects:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git clone --recurse-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">cd&lt;/span> pkgcraft-workspace
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From this workspace, the pkgcraft-bash project can be built via:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ cargo build -p pkgcraft-bash --features pkgcraft
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>This should create the shared pkgcraft-bash library
+&lt;code>target/debug/libpkgcraft_bash.so&lt;/code> from which dynamic builtins can be loaded.
+Note that in order to use the library you&amp;rsquo;ll need to point it to the scallop
+library it links against via:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">export&lt;/span> &lt;span class="nv">LD_LIBRARY_PATH&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">PWD&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>/target/debug/meson
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="profiling">Profiling&lt;/h3>
+&lt;p>In order to aid in bash development with rust, scallop provides a rudimentary
+profiling builtin. To load and use it, see the following example:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile sleep &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: sleep &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.005011736s, loops: 3, per loop: 1.001670578s
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>In short, it profiles a user-specified command over a period of time while
+counting loops completed. This could be extended to run cache warmups and
+perform more accurate statistical analysis, but its current form works for
+simple benchmarking.&lt;/p>
+&lt;p>It&amp;rsquo;s quite fair to say that if you start benchmarking bash code then you
+probably shouldn&amp;rsquo;t be using bash; however, most Gentoo package managers include
+a relatively large amount of bash that should be optimized in cases where it
+runs often or in tight loops.&lt;/p>
+&lt;p>Pkgcraft leverages scallop to sidestep this entirely, allowing all native bash
+code required to support operating with ebuilds to be replaced with rust.
+Alongside that, this profile builtin helps highlight certain types of runtime
+regressions in pkgcraft&amp;rsquo;s builtin support.&lt;/p>
+&lt;h3 id="atom-version-comparisons">Atom version comparisons&lt;/h3>
+&lt;p>Now that you have some experience with the &lt;code>profile&lt;/code> builtin, let&amp;rsquo;s compare the
+performance of an actual rust-based builtin to similar functionality written
+natively in bash for atom version comparisons.&lt;/p>
+&lt;p>First, download a copy of &lt;code>eapi7-ver.eclass&lt;/code> that contains the bash
+implementation of the version comparison algorithm used in Gentoo for the
+&lt;code>ver_test&lt;/code> command in portage and pkgcore.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ wget https://raw.githubusercontent.com/gentoo/gentoo/master/eclass/eapi7-ver.eclass
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Next, check its performance using the &lt;code>profile&lt;/code> builtin. Note that if you
+started a new bash shell, the &lt;code>profile&lt;/code> builtin will have to be reloaded.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">source&lt;/span> eapi7-ver.eclass
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.000030955s, loops: 10648, per loop: 281.745µs
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>With that baseline established for the native bash implementation, let&amp;rsquo;s create
+a new builtin that wraps pkgcraft support to provide the same functionality.
+It&amp;rsquo;s probably easiest to copy pkgcraft&amp;rsquo;s &lt;code>ver_test&lt;/code> builtin into pkgcraft-bash
+with minor alterations in order to make it dynamically loadable.&lt;/p>
+&lt;p>Use the following diff that currently applies against the pkgcraft-bash repo to
+include &lt;code>ver_test&lt;/code> support (or use it as a guide if it has fallen out of date).&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;span class="lnt">71
+&lt;/span>&lt;span class="lnt">72
+&lt;/span>&lt;span class="lnt">73
+&lt;/span>&lt;span class="lnt">74
+&lt;/span>&lt;span class="lnt">75
+&lt;/span>&lt;span class="lnt">76
+&lt;/span>&lt;span class="lnt">77
+&lt;/span>&lt;span class="lnt">78
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-diff" data-lang="diff">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">diff --git a/src/builtins.rs b/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">index 83a6e63..7055281 100644
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>&lt;span class="gd">--- a/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+++ b/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gu">@@ -1,6 +1,7 @@
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span> use scallop::builtins::DynBuiltin;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> mod atom;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+mod ver_test;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #[export_name = &amp;#34;profile_struct&amp;#34;]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> static mut PROFILE_STRUCT: Option&amp;lt;DynBuiltin&amp;gt; = None;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">@@ -22,9 +23,10 @@ pub(super) extern &amp;#34;C&amp;#34; fn initialize() {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span> // update struct pointers
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> unsafe {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> atom::ATOM_STRUCT = Some(atom::BUILTIN.into());
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ ver_test::VER_TEST_STRUCT = Some(ver_test::BUILTIN.into());
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> // add builtins to known run() mapping
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">- update_run_map([&amp;amp;atom::BUILTIN]);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+ update_run_map([&amp;amp;atom::BUILTIN, &amp;amp;ver_test::BUILTIN]);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">diff --git a/src/builtins/ver_test.rs b/src/builtins/ver_test.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>new file mode 100644
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">index 0000000..24dfecc
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>&lt;span class="gd">--- /dev/null
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+++ b/src/builtins/ver_test.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gu">@@ -0,0 +1,46 @@
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span>&lt;span class="gi">+#![cfg(feature = &amp;#34;pkgcraft&amp;#34;)]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use std::str::FromStr;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use pkgcraft::atom::Version;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::builtins::{Builtin, ExecStatus, DynBuiltin};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::variables::string_value;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::{Error, Result};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+const LONG_DOC: &amp;amp;str = &amp;#34;Perform comparisons on package version strings.&amp;#34;;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+#[doc = stringify!(LONG_DOC)]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(crate) fn run(args: &amp;amp;[&amp;amp;str]) -&amp;gt; Result&amp;lt;ExecStatus&amp;gt; {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let pvr = string_value(&amp;#34;PVR&amp;#34;).unwrap_or_else(|| String::from(&amp;#34;&amp;#34;));
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let pvr = pvr.as_str();
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let (v1, op, v2) = match args.len() {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 2 if pvr.is_empty() =&amp;gt; return Err(Error::Builtin(&amp;#34;$PVR is undefined&amp;#34;.into())),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 2 =&amp;gt; (pvr, args[0], args[1]),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 3 =&amp;gt; (args[0], args[1], args[2]),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ n =&amp;gt; return Err(Error::Builtin(format!(&amp;#34;only accepts 2 or 3 args, got {n}&amp;#34;))),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ };
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let v1 = Version::from_str(v1)?;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let v2 = Version::from_str(v2)?;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let ret = match op {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-eq&amp;#34; =&amp;gt; v1 == v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-ne&amp;#34; =&amp;gt; v1 != v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-lt&amp;#34; =&amp;gt; v1 &amp;lt; v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-gt&amp;#34; =&amp;gt; v1 &amp;gt; v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-le&amp;#34; =&amp;gt; v1 &amp;lt;= v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-ge&amp;#34; =&amp;gt; v1 &amp;gt;= v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ _ =&amp;gt; return Err(Error::Builtin(format!(&amp;#34;invalid operator: {op}&amp;#34;))),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ };
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ Ok(ExecStatus::from(ret))
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+}
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+#[export_name = &amp;#34;ver_test_struct&amp;#34;]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(super) static mut VER_TEST_STRUCT: Option&amp;lt;DynBuiltin&amp;gt; = None;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(super) static BUILTIN: Builtin = Builtin {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ name: &amp;#34;ver_test&amp;#34;,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ func: run,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ help: LONG_DOC,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ usage: &amp;#34;ver_test 1 -lt 2-r1&amp;#34;,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gd">--
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>2.35.1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Once the diff is applied, rebuild pkgcraft-bash with pkgcraft support enabled
+from the root of the workspace which will currently build the profile, atom,
+and ver_test builtins.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ cargo build -p pkgcraft-bash --features pkgcraft
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now, profile &lt;code>ver_test&lt;/code> again making sure to use the builtin implementation.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">unset&lt;/span> -f ver_test
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile ver_test
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.000010097s, loops: 252482, per loop: 11.882µs
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From the result, note that the rust implementation is over 20x faster than the
+native bash version. Through further work this can potentially be improved with
+more changes to bash&amp;rsquo;s builtin support. For example, bash currently does a
+binary search in its builtins array to find if a matching builtin exists before
+executing it. This should be quicker to perform as a simple hash table lookup
+instead.&lt;/p>
+&lt;h2 id="rust-or-bash-your-call">Rust or bash, your call&lt;/h2>
+&lt;p>Overall, I personally find most programming languages to be more maintainable
+than bash in the long-term for any well-written code longer than relatively
+simple scripts. Add in rust&amp;rsquo;s ability to be exported via its FFI interface to
+any language that has C interoperability and it should become apparent why I
+prefer implementing such support in rust rather than bash.&lt;/p>
+&lt;p>If scallop keeps improving its wrapper API around bash, support for writing
+bash functionality in rust should continue to improve as well. Looking forward,
+it&amp;rsquo;s feasible something like &lt;a href="https://github.com/bats-core/bats-core">bats&lt;/a>
+could be written in rust or scallop&amp;rsquo;s functionality could be exported to
+another language, for example allowing python to natively interact with bash.&lt;/p>
+&lt;p>For the time being, I&amp;rsquo;ll just continue using it for one of the main reasons I
+created it: trying to avoid writing extensive code in bash.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>They can currently be found in the &lt;code>pkgsh/builtins&lt;/code> subdirectory of the
+&lt;a href="https://github.com/pkgcraft/pkgcraft/tree/main/src/pkgsh/builtins">pkgcraft crate&lt;/a>.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>The &lt;a href="https://crates.io/crates/ctor">ctor crate&lt;/a> can make this easier via procedural macros.&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Extending bash: Mangling the shell for better integration</title><link>https://pkgcraft.github.io/posts/extending-bash/</link><pubDate>Tue, 25 Jan 2022 01:29:42 -0700</pubDate><guid>https://pkgcraft.github.io/posts/extending-bash/</guid><description>&lt;p>Basing a package manager and related specification on bash is a mistake.
+Familiarity and hackability are great in the short-term, but as the novelty
+wears off it becomes clear that maintainability, efficiency, and other
+attributes hard to wrest from bash&amp;rsquo;s rigid design all suffer. As long as
+compatibility remains important for pkgcraft that decision can&amp;rsquo;t be altered;
+however, that doesn&amp;rsquo;t mean nothing can be done to improve the situation.&lt;/p>
+&lt;p>One option is to go pkgcore&amp;rsquo;s route, using IPC with a bash daemon. This enables
+sharing bash processes between separate tasks rather than relying on a
+simplistic exec-per-use scheme. Among other effects, this makes pkgcore&amp;rsquo;s
+metadata generation approximately five times faster than its main competitor.
+While providing many marginal improvements, this daemonized approach still
+doesn&amp;rsquo;t escape the restrictive boundaries of regular shell usage. Among other
+downsides, pkgcore requires subshells (meaning additional processes) to avoid
+environment leaks during metadata generation and uses hacky RPC signaling
+across pipes since it&amp;rsquo;s hard to work with anything else natively in bash.&lt;/p>
+&lt;p>Pkgcraft aims to move beyond daemon functionality and achieve better lower
+level integration. The dream of replacing bash with something threadable and
+modern is enticing, but it&amp;rsquo;s fairly impossible in the short-term and thus
+disregarded. Instead, pkgcraft dives directly into the pit of insanity; it
+forks bash&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> in an effort to achieve its goals.&lt;/p>
+&lt;h3 id="parallelism-problems">Parallelism problems&lt;/h3>
+&lt;p>Since pkgcraft goes to the extent of forking bash, it also takes on the various
+deficiencies that hinder its use as a library. For a start, bash is not
+thread-safe or reentrant at all. The current design uses an extensive amount of
+global mutables to track both its parser and shell state. Bash uses bison which
+supports generating reentrant parsers, but the shell itself requires extensive
+rework for that to be feasible on a global scale.&lt;/p>
+&lt;p>With that in mind, in order to support parallel usage a process pool or similar
+design must be used. Currently this isn&amp;rsquo;t something that can easily be dropped
+into place like python&amp;rsquo;s multiprocessing pool support. Parallelism in rust
+centers around threading since its memory safety through enforced lifetimes
+highlights threaded execution that&amp;rsquo;s guaranteed data-race free. This means that
+most data parallelism crates similar to rayon only support threaded operation,
+disregarding multi-process support entirely. At some point, pkgcraft will have
+to address this and probably create its own pool or parallelized iterator
+support that reuses processes.&lt;/p>
+&lt;h3 id="error-handling">Error handling&lt;/h3>
+&lt;p>Beyond parallelism issues, bash leverages longjmp() and frame unwinding for its
+error handling. This is understandable due to its age, chosen language, and
+minimal dependencies, but it doesn&amp;rsquo;t lend itself well to interoperability with
+rust. For pkgcraft, bash is wrapped where its C code is called from the rust
+library and then it can call back into rust support exported to C. The issue
+with that is unwinding across rust-based frames from C is undefined behavior.
+Hopefully at some point the &amp;ldquo;C-unwind&amp;rdquo; ABI&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> and other related FFI work in
+rust makes it into stable.&lt;/p>
+&lt;p>With respect to longjmp() usage, in order to avoid null jump buffers the forked
+version of bash tries to establish jump targets on the main entry points used
+by the rust library. This isn&amp;rsquo;t necessary for standard bash because its top
+level jump points are all in main() which isn&amp;rsquo;t used when built as a library.
+Without this, most error handling segfaults when using &lt;code>set -e&lt;/code> because bash
+tries to jump to an empty jump buffer.&lt;/p>
+&lt;p>To cap off its unfriendly error handling, bash generally dumps all its error
+messages to stderr. Clearly this isn&amp;rsquo;t wanted when used as a library,
+especially when parallelized. To avoid this, the rust library passes in
+callbacks for error and warning handling that bash calls, passing the raw
+messages back to rust which are then converted into native rust errors or
+logged.&lt;/p>
+&lt;p>The remaining issue is that unless something like &lt;code>set -e&lt;/code> is being used on the
+bash side, most errors do not cause immediate returns, exits, or any trigger
+that could be used on the rust side to return a corresponding error result. To
+work around this, the most recent bash error is stored on the rust side in a
+thread-local variable that can be accessed after relevant calls in order to
+determine their error status. This allows functionality such as returning error
+results on failed &lt;code>source&lt;/code> calls while retaining the bash error message without
+having to use &lt;code>set -e&lt;/code>, subshells, and redirection in order to achieve a
+similar effect in native bash.&lt;/p>
+&lt;h3 id="leveraging-builtins">Leveraging builtins&lt;/h3>
+&lt;p>In terms of extensibility, bash provides support for writing builtins that can
+be called like any other command. For example, &lt;code>set&lt;/code>, &lt;code>local&lt;/code>, &lt;code>echo&lt;/code>, and many
+more commands provided by bash are builtins. Pkgcraft intends to use builtins
+for all the commands that would either be exposed as functions or other public
+callables. All other internal functionality will be implemented as methods
+on the shell instance wrapping the bash library.&lt;/p>
+&lt;p>The difficulty comes with sharing state across the FFI border since the
+builtins are written in rust, but are called from C in bash. Therefore it&amp;rsquo;s not
+easy to write them in a fashion that allows reuse and inter-builtin calls while
+also passing some form of mutable context parameter. Once again, pkgcraft uses
+a mutable, thread-local instance that builtins are able to import and use
+within closures to access and modify build data as required. While somewhat
+ugly, this does allow avoiding the even uglier bash variable hacks used by
+pkgcore.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>Pkgcraft&amp;rsquo;s bash fork is available at &lt;a href="https://github.com/pkgcraft/bash">https://github.com/pkgcraft/bash&lt;/a>.&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html">https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item></channel></rss>

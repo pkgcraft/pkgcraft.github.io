@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><title type="text">Pkgcraft</title><subtitle type="html">Pkgcraft</subtitle><updated>2022-07-15T05:54:52+00:00</updated><id>https://pkgcraft.github.io/</id><link rel="alternate" type="text/html" href="https://pkgcraft.github.io/"/><link rel="self" type="application/atom+xml" href="https://pkgcraft.github.io/atom.xml"/><rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</rights><generator uri="https://gohugo.io/" version="0.101.0">Hugo</generator><entry><title type="text">Binding the World</title><link rel="alternate" type="text/html" href="https://pkgcraft.github.io/posts/nascent-python-bindings/"/><id>https://pkgcraft.github.io/posts/nascent-python-bindings/</id><updated>2022-07-15T05:54:50+00:00</updated><published>2022-06-29T11:29:42-07:00</published><author><uri>https://pkgcraft.github.io/</uri></author><rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</rights><summary type="html">One of Gentoo&amp;rsquo;s major weaknesses is the lack of a shared implementation that natively supports bindings to other languages for core, specification-level features such as dependency format parsing. Due to this deficiency, over the years I&amp;rsquo;ve seen the same algorithms implemented in Python, C, Bash, Go, and more at varying levels of success.</summary><content type="html">&lt;p>One of Gentoo&amp;rsquo;s major weaknesses is the lack of a shared implementation that
+natively supports bindings to other languages for core, specification-level
+features such as dependency format parsing. Due to this deficiency, over the
+years I&amp;rsquo;ve seen the same algorithms implemented in Python, C, Bash, Go, and
+more at varying levels of success.&lt;/p>
+&lt;p>Now, I must note that I don&amp;rsquo;t mean to disparage these efforts especially when
+done for fun or to learn a new language; however, it often seems they end up
+being used in tools or services used by the wider community. Then as the
+specification slowly evolves and original authors move on, developers are stuck
+maintaining multiple implementations if they want to keep the related tools or
+services relevant.&lt;/p>
+&lt;p>In an ideal world, the canonical implementation for a core feature set is
+written in a language that can be easily bound by other languages offering
+developers the choice to reuse this support without having to write their own.
+To exhibit this possibility, one of pkgcraft&amp;rsquo;s goals is to act as a core
+library supporting language bindings.&lt;/p>
+&lt;h3 id="design">Design&lt;/h3>
+&lt;p>Interfacing rust code with another language often requires a C wrapper library
+in order to perform efficiently and/or sidestep rust&amp;rsquo;s lifetime model that
+clashes with more ownership-based languages. Bindings then build on top of this
+C layer, allowing ignorance of the rust underneath.&lt;/p>
+&lt;p>For pkgcraft, this C library is provided via
+&lt;a href="https://github.com/pkgcraft/pkgcraft-c">pkgcraft-c&lt;/a>, currently wrapping
+pkgcraft&amp;rsquo;s core depspec functionality (package atoms) in addition to providing
+the initial interface for config, repo, and package interactions.&lt;/p>
+&lt;p>For some languages it&amp;rsquo;s also possible to develop bindings or support directly
+in rust. There are a decent number of currently evolving, language-specific
+projects that allow non-rust language development including pyo3 for python,
+rutie for ruby, neon for Node.js, and others. These projects generally wrap the
+unsafe C layer internally, allowing for simpler development. Generally
+speaking, I recommend going this route if performance levels and project goals
+can be met.&lt;/p>
+&lt;p>Originally, pkgcraft used &lt;a href="https://github.com/PyO3">pyo3&lt;/a> for its python
+bindings. If one is familiar with rust and python, the development experience
+is relatively pleasant and allows simpler builds using maturin rather then the
+pile of technical debt that distutils, setuptools, and its extensions provide
+when trying to do anything outside the ordinary.&lt;/p>
+&lt;p>However, pyo3 has a couple, currently unresolved issues that lead me to abandon
+it. First, the speed of its class instantiation is slower than then native
+python implementation, even for simple classes. It should be noted this is only
+important if your design involves creating thousands of native object instances
+at a python level. It&amp;rsquo;s often preferable to avoid this overhead by exposing
+functionality to interact with large groups of rust objects. In addition, for
+most developers coming from native python the performance hit won&amp;rsquo;t be overly
+noticeable. In any case, class instantiation overhead will probably decrease as
+the project matures and more work is done on optimization.&lt;/p>
+&lt;p>More importantly, pyo3 does not support exposing any object that contains
+fields using explicit lifetimes. This means any struct that contains borrowed
+fields can&amp;rsquo;t be directly exported due to the clashes between the memory models
+and ownership designs of rust and python. It&amp;rsquo;s quite possible to work around
+this, but that often means copying data in order for the python side to obtain
+ownership or redesigning the data structures used on the rust side. Whether
+this is acceptable will depend on how large the performance hit is or how much
+work the redesign takes.&lt;/p>
+&lt;p>For my part, having experience writing native extensions using the CPython API
+as well as cython, the workarounds necessary to avoid exposing borrowed objects
+weren&amp;rsquo;t worth the effort, especially because pkgcraft requires a C API anyway
+to support C itself and languages lacking compatibility layer projects. Thus I
+rewrote pkgcraft&amp;rsquo;s python bindings using cython instead which immediately
+raised performance near to levels I was initially expecting; however, the
+downside is quite apparent since the bindings have to manually handle all the
+type conversions and resource deallocation while calling through the C wrapper.
+It&amp;rsquo;s a decent amount more work, but I think the performance benefits are worth
+it.&lt;/p>
+&lt;h3 id="development">Development&lt;/h3>
+&lt;p>First, the tools for building the code should be installed. This includes a
+recent rust compiler and C compiler. I leave it up to the reader to make use of
+&lt;code>rustup&lt;/code> and/or their distro&amp;rsquo;s package manager to install the required build
+tools (and others such as &lt;code>git&lt;/code> that are implied).&lt;/p>
+&lt;p>Next, the code must be pulled down. The easiest way to do this is to
+recursively clone pkgcraft-workspace which should include semi-recent
+submodules for all pkgcraft projects:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git clone --recurse-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">cd&lt;/span> pkgcraft-workspace
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From this workspace, pkgcraft-c can be built and various shell variables set in
+order to build python bindings via the following command:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">source&lt;/span> ./build pkgcraft-c
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>This builds pkgcraft into a shared library that is exposed to the python build
+via setting &lt;code>$LD_LIBRARY_PATH&lt;/code> and &lt;code>$PKG_CONFIG_PATH&lt;/code>. Once that completes the
+python bindings can be built and tested via tox:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">cd&lt;/span> pkgcraft-python
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ tox -e python
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>When developing bindings built on top of a C library it&amp;rsquo;s wise to run the same
+testsuite under valgrind looking for seemingly inevitable memory leaks,
+exacerbated by rust requiring all allocations to be returned in order to be
+freed safely since it historically didn&amp;rsquo;t use the system allocator. For
+pkgcraft, this is provided via another tox target:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e valgrind
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>If you&amp;rsquo;re familiar with valgrind, we mainly care about the definitely and
+indirectly lost categories of memory leaks, the other types relate to global
+objects or caches that aren&amp;rsquo;t explicitly deallocated on exit. The valgrind
+target for tox should error out if any memory leaks are detected so if it
+completes successfully no leaks were detected.&lt;/p>
+&lt;h3 id="benchmarking-vs-pkgcore-and-portage">Benchmarking vs pkgcore and portage&lt;/h3>
+&lt;p>Stepping away from regular development towards more interesting data, pkgcraft
+provides rough processing and memory benchmark suites in order to compare its
+nascent python bindings with pkgcore and portage. Currently these only focus on
+atom object instantiation, but may be extended to include other functionality
+if the API access isn&amp;rsquo;t too painful for pkgcore and/or portage.&lt;/p>
+&lt;p>To run the processing time benchmarks that use
+&lt;a href="https://pypi.org/project/pytest-benchmark">pytest-benchmark&lt;/a>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e bench
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>For a summary of benchmark results only including the mean and standard
+deviation:&lt;/p>
+&lt;style type="text/css">
+.ansi2html-content { display: inline; white-space: pre-wrap; word-wrap: break-word; }
+.ansi1 { font-weight: bold; }
+.ansi31 { color: #aa0000; }
+.ansi32 { color: #00aa00; }
+.ansi33 { color: #aa5500; }
+&lt;/style>
+&lt;pre class="ansi2html-content">
+&lt;span class="ansi33">----------------- benchmark 'test_bench_atom_random': 4 tests ------------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">--------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_random[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 4.5395 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.3722 (1.0) &lt;/span>
+test_bench_atom_random[pkgcraft-cached] &lt;span class="ansi1"> 6.2360 (1.37) &lt;/span>&lt;span class="ansi1"> 1.3386 (3.60) &lt;/span>
+test_bench_atom_random[pkgcore-atom] &lt;span class="ansi1"> 30.9767 (6.82) &lt;/span>&lt;span class="ansi1"> 1.1428 (3.07) &lt;/span>
+test_bench_atom_random[portage-Atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 50.2636 (11.07) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 19.7562 (53.07) &lt;/span>
+&lt;span class="ansi33">--------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">--------------------- benchmark 'test_bench_atom_static': 4 tests ----------------------&lt;/span>
+Name (time in ns) Mean StdDev
+&lt;span class="ansi33">----------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_static[pkgcraft-cached] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 217.2820 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 5.9821 (1.0) &lt;/span>
+test_bench_atom_static[pkgcraft-Atom] &lt;span class="ansi1"> 725.2229 (3.34) &lt;/span>&lt;span class="ansi1"> 41.6775 (6.97) &lt;/span>
+test_bench_atom_static[pkgcore-atom] &lt;span class="ansi1"> 28,331.4369 (130.39) &lt;/span>&lt;span class="ansi1"> 942.0003 (157.47) &lt;/span>
+test_bench_atom_static[portage-Atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 33,794.6625 (155.53) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 14,358.8390 (&amp;gt;1000.0)&lt;/span>
+&lt;span class="ansi33">----------------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">----------------- benchmark 'test_bench_atom_sorting_best_case': 2 tests ----------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">-----------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_sorting_best_case[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 6.1195 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.2011 (1.0) &lt;/span>
+test_bench_atom_sorting_best_case[pkgcore-atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 936.9403 (153.11) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 5.5534 (27.61) &lt;/span>
+&lt;span class="ansi33">-----------------------------------------------------------------------------------------&lt;/span>
+&lt;span class="ansi33">---------------- benchmark 'test_bench_atom_sorting_worst_case': 2 tests -----------------&lt;/span>
+Name (time in us) Mean StdDev
+&lt;span class="ansi33">------------------------------------------------------------------------------------------&lt;/span>
+test_bench_atom_sorting_worst_case[pkgcraft-Atom] &lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 6.2702 (1.0) &lt;/span>&lt;span class="ansi32">&lt;/span>&lt;span class="ansi1 ansi32"> 0.3301 (1.0) &lt;/span>
+test_bench_atom_sorting_worst_case[pkgcore-atom] &lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 924.1410 (147.39) &lt;/span>&lt;span class="ansi31">&lt;/span>&lt;span class="ansi1 ansi31"> 6.9942 (21.19) &lt;/span>
+&lt;span class="ansi33">------------------------------------------------------------------------------------------&lt;/span>
+&lt;/pre>
+&lt;p>As seen above, pkgcraft is able to instantiate atom objects about 5-6x faster
+than pkgcore and about 10x faster than portage. For static atoms when using the
+cached implementation this increases to about 150x faster, meaning portage
+should look into using an LRU cache for directly created atom objects. With
+respect to pkgcore&amp;rsquo;s static result, it also appears to not use caching;
+however, it does support atom instance caching internally so the benchmark is
+avoiding that somehow.&lt;/p>
+&lt;p>When comparing sorting, pkgcraft is well over two orders of magnitude ahead of
+pkgcore and I imagine portage would fare even worse, but it doesn&amp;rsquo;t natively
+support atom object comparisons so isn&amp;rsquo;t included here.&lt;/p>
+&lt;p>Beyond processing time it&amp;rsquo;s often useful to track memory use, especially for
+languages such as python that are designed more for ease of development than
+memory efficiency. There are a number of different techniques to track memory
+use such as projects like &lt;a href="https://pypi.org/project/guppy3/">guppy3&lt;/a> but they
+often work with native python objects, ignoring or misrepresenting allocations
+done in underlying implementations. Instead, pkgcraft includes a simple script
+that creates a list of a million objects for three different atom types while
+tracking elapsed time and overall memory use (using resident set size) in
+separate processes.&lt;/p>
+&lt;p>To run the memory benchmarks use:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ tox -e membench
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Which produces output similar to:&lt;/p>
+&lt;pre tabindex="0">&lt;code>Static atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 474.2 MB (0.94s)
+pkgcraft-cached 8.7 MB (0.27s)
+pkgcore 8.4 MB (1.12s)
+portage 795.5 MB (10.62s)
+Dynamic atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 955.2 MB (2.93s)
+pkgcraft-cached 957.9 MB (3.56s)
+pkgcore 1.3 GB (31.01s)
+portage 4.0 GB (56.22s)
+Random atoms (1000000)
+----------------------------------------------
+implementation memory (elapsed)
+----------------------------------------------
+pkgcraft 945.4 MB (3.75s)
+pkgcraft-cached 21.3 MB (1.30s)
+pkgcore 20.9 MB (2.67s)
+portage 3.6 GB (46.77s)
+&lt;/code>&lt;/pre>&lt;p>For static atoms, note that pkgcraft-cached and pkgcore&amp;rsquo;s memory usage is quite
+close with pkgcore slightly edging ahead due to the extra data pkgcraft stores
+to speed up comparisons. Another point of interest is that the uncached
+implementation still beats pkgcore in processing time. This is because the
+underlying rust implementation has its own cache allowing it to skip
+unnecessary parsing, leaving the majority of overhead from cython&amp;rsquo;s object
+instantiation. Portage is last by a large margin since it doesn&amp;rsquo;t directly
+cache atom objects.&lt;/p>
+&lt;p>Every dynamic atom is different making caching irrelevant so no implementation
+has a substantial memory usage edge. Without cache speedups, the uncached
+pkgcraft implementation is the fastest as it has the least overhead. Pkgcore&amp;rsquo;s
+memory usage is comparatively respectable, but uses about an order of magnitude
+more processing time for parsing and instantiation. Portage is again last by an
+increased margin and appears to perform inefficiently when storing more complex
+atoms.&lt;/p>
+&lt;p>Finally, random atoms try to model closer to what is found across the tree in
+terms of cache hits. As the results show, using cached implementations probably
+is a good idea for large sets of atoms with occasional overlap in order to save
+both processing time and memory usage; otherwise, both attributes suffer as
+seen from portage&amp;rsquo;s uncached implementation results.&lt;/p>
+&lt;h3 id="looking-to-the-future">Looking to the future&lt;/h3>
+&lt;p>From the rough benchmarks above, it seems apparent both pkgcore and portage
+could decrease their overall processing time and/or memory usage by moving to
+using package atom support from pkgcraft python bindings. While I&amp;rsquo;m unsure how
+much of a performance difference it would make, it should at least be
+noticeably worthwhile when processing large amounts of data, e.g. scanning the
+entire tree with pkgcheck or sorting atoms during large dependency resolutions.&lt;/p>
+&lt;p>It&amp;rsquo;s also clear that using cython&amp;rsquo;s &lt;a href="https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html">extension
+types&lt;/a>
+and C support on top of rust code yield relatively sizeable wins over native
+python code. From my perspective, it seems worthwhile to implement all core
+functionality in a similar fashion for projects that last decades like portage
+already has. The downside of implementing support in a more difficult language
+should decrease the longer a project remains viable.&lt;/p>
+&lt;p>In terms of feasibility, it&amp;rsquo;s probably easier to inject the pkgcraft bindings
+into portage since its atom support subclasses string objects while pkgcore&amp;rsquo;s
+subclasses an internal restriction class, but both should be possible with some
+redesign. Realistically speaking, neither is likely to occur because both
+projects lack maintainers with the required combination of skill, time, and
+interest to perform the rework. In addition, currently doing so in a
+non-optional fashion would generally restrict projects to fewer targets due to
+rust&amp;rsquo;s lack of support for older architectures, but this downside may be
+somewhat resolved if a viable GCC rust implementation is released in the
+future.&lt;/p>
+&lt;p>Other than python, pkgcraft has more basic support available for go supporting
+package atom and version object interactions. As the core library gains more
+features, I&amp;rsquo;ll try to keep working on exposing the same functionality via
+bindings since I think initial interactions with pkgcraft may be easiest when
+leveraging it for data processing from scripting languages.&lt;/p></content><category scheme="https://pkgcraft.github.io/tags/python/" term="python" label="python"/><category scheme="https://pkgcraft.github.io/tags/pkgcraft/" term="pkgcraft" label="pkgcraft"/><category scheme="https://pkgcraft.github.io/tags/gentoo/" term="Gentoo" label="Gentoo"/></entry><entry><title type="text">Rustifying Bash</title><link rel="alternate" type="text/html" href="https://pkgcraft.github.io/posts/rustifying-bash-builtins/"/><id>https://pkgcraft.github.io/posts/rustifying-bash-builtins/</id><updated>2022-07-15T05:54:50+00:00</updated><published>2022-06-08T13:08:38-06:00</published><author><uri>https://pkgcraft.github.io/</uri></author><rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</rights><summary type="html">In the previous post on extending bash, using builtins was mentioned as a way to improve extensibility. Rather than writing native bash functions or spawning processes to run external tools, pkgcraft implements all its bash command support using builtins.</summary><content type="html">&lt;p>In the previous post on extending bash, using builtins was mentioned as a way
+to improve extensibility. Rather than writing native bash functions or spawning
+processes to run external tools, pkgcraft implements all its bash command
+support using builtins.&lt;/p>
+&lt;p>For example, the &lt;code>inherit&lt;/code> command used to load eclasses, &lt;code>die&lt;/code>, and all
+install-related functionality (e.g. &lt;code>doins&lt;/code>) are all implemented as
+builtins&lt;sup id="fnref:1">&lt;a href="https://pkgcraft.github.io/posts/rustifying-bash-builtins/#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>. This allows for a more seamless experience compared to pkgcore
+which implements all of this natively in bash using a simple daemon that sends
+messages via shared fds to communicate between the python and bash sides.&lt;/p>
+&lt;p>Note that these builtins are not readily available for use in regular bash
+since most are highly Gentoo specific, often rely on underlying build state,
+and aren&amp;rsquo;t built in a fashion that can be externally exposed. However, the
+design work done to support bash in rust also allows creating builtins
+compatible with standard bash.&lt;/p>
+&lt;p>For those interested in bash and rust, the following walkthrough explains how
+dynamic builtins work, describes some of the rust support required for
+interoperability, and discusses why they&amp;rsquo;re useful.&lt;/p>
+&lt;h2 id="dynamic-builtin-basics">Dynamic builtin basics&lt;/h2>
+&lt;p>For background, bash includes builtins used daily by many, e.g. &lt;code>cd&lt;/code>, &lt;code>echo&lt;/code>,
+and &lt;code>source&lt;/code> are all builtins. In addition to these, external builtins can be
+loaded dynamically from shared object files via &lt;code>enable&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f path/to/shared/object.so builtin_name
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>which uses &lt;code>dlopen&lt;/code> to open the shared object and &lt;code>dlsym&lt;/code> to load the symbol
+for the related builtin, if it exists. The builtin is then registered
+internally as dynamically loaded and can be used until it is either
+unloaded or the shell exits.&lt;/p>
+&lt;p>To remove a previously loaded builtin use:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -d builtin_name
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Running a builtin is the same as running most other commands:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ builtin_name args to pass
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>In terms of default execution precedence, similarly named functions come first,
+then builtins, and finally external binaries. This means if an in scope
+function and loaded builtin have the same name, running that name in the shell
+will run the function and not the builtin.&lt;/p>
+&lt;p>The version of bash installed by most distros should support dynamic builtins
+inherently because bash itself doesn&amp;rsquo;t provide a disable mechanism; however,
+Gentoo manually hacks the configure script to disable support by default. In
+order to enable it, make sure to build bash with the &lt;code>plugins&lt;/code> USE flag
+enabled.&lt;/p>
+&lt;p>Builtins have access to nearly all bash&amp;rsquo;s underlying API; however, they are
+mainly limited to running in command form using simple string arguments. In
+other words, scoped builtins that form more complex expressions, e.g. bash&amp;rsquo;s
+conditional expression &lt;code>[[ ]]&lt;/code>, generally require parser and/or grammar level
+changes that aren&amp;rsquo;t possible to achieve in a basic builtin.&lt;/p>
+&lt;h2 id="creating-builtins-in-rust">Creating builtins in rust&lt;/h2>
+&lt;p>One of the tricky parts supporting dynamic builtins in rust is that it has no
+support of life before main or lib init similar to C. Therefore, we must
+determine some way to provide external symbols for builtin structs that can&amp;rsquo;t
+be initialized globally before init. To do this rust relies on linker support
+for runtime initialization via &lt;code>DT_INIT_ARRAY&lt;/code> for ELF objects (and similar on
+other platforms). This allows running a specified function during the
+library loading process that replaces Option wrapped, globally defined,
+static mutables with their actual builtin structs required by bash&lt;sup id="fnref:2">&lt;a href="https://pkgcraft.github.io/posts/rustifying-bash-builtins/#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>.&lt;/p>
+&lt;p>Beyond building the shared objects, pkgcraft provides support for interacting
+with bash&amp;rsquo;s C API in rust via &lt;a href="https://github.com/pkgcraft/scallop">scallop&lt;/a>.
+This enables performing most anything that can be done natively in bash. For
+example, bash variables can be bound, unbound, and marked as readonly. However,
+it should be noted that scallop is a young project so it only supports what
+pkgcraft has needed thus far, has many rough edges, and doesn&amp;rsquo;t come close to
+wrapping all of bash&amp;rsquo;s exported API.&lt;/p>
+&lt;p>In addition to scallop, pkgcraft also provides pkgcraft-bash which is mainly an
+example project to create dynamic builtins. For our purposes, we&amp;rsquo;ll be
+exploring scallop and pkgcraft-bash while using them to demonstrate how
+rust-based builtins work.&lt;/p>
+&lt;h4 id="development-environment">Development environment&lt;/h4>
+&lt;p>First, the required tools for building the code should be installed. This
+includes a recent rust compiler, C compiler, meson, and a version of bash that
+supports loading dynamic builtins from shared objects. I leave it up to the
+reader to leverage &lt;code>rustup&lt;/code> and/or their distro&amp;rsquo;s package manager to install
+the required build tools (and others such as &lt;code>git&lt;/code> that are implied
+requirements).&lt;/p>
+&lt;p>Next, the required pkgcraft subprojects must be pulled down. The easiest way to
+do this is to recursively clone pkgcraft-workspace which should include
+semi-recent submodule checkouts for all the subprojects:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">git clone --recurse-submodules https://github.com/pkgcraft/pkgcraft-workspace.git
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">cd&lt;/span> pkgcraft-workspace
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From this workspace, the pkgcraft-bash project can be built via:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ cargo build -p pkgcraft-bash --features pkgcraft
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>This should create the shared pkgcraft-bash library
+&lt;code>target/debug/libpkgcraft_bash.so&lt;/code> from which dynamic builtins can be loaded.
+Note that in order to use the library you&amp;rsquo;ll need to point it to the scallop
+library it links against via:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">export&lt;/span> &lt;span class="nv">LD_LIBRARY_PATH&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">PWD&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>/target/debug/meson
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="profiling">Profiling&lt;/h3>
+&lt;p>In order to aid in bash development with rust, scallop provides a rudimentary
+profiling builtin. To load and use it, see the following example:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile sleep &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: sleep &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.005011736s, loops: 3, per loop: 1.001670578s
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>In short, it profiles a user-specified command over a period of time while
+counting loops completed. This could be extended to run cache warmups and
+perform more accurate statistical analysis, but its current form works for
+simple benchmarking.&lt;/p>
+&lt;p>It&amp;rsquo;s quite fair to say that if you start benchmarking bash code then you
+probably shouldn&amp;rsquo;t be using bash; however, most Gentoo package managers include
+a relatively large amount of bash that should be optimized in cases where it
+runs often or in tight loops.&lt;/p>
+&lt;p>Pkgcraft leverages scallop to sidestep this entirely, allowing all native bash
+code required to support operating with ebuilds to be replaced with rust.
+Alongside that, this profile builtin helps highlight certain types of runtime
+regressions in pkgcraft&amp;rsquo;s builtin support.&lt;/p>
+&lt;h3 id="atom-version-comparisons">Atom version comparisons&lt;/h3>
+&lt;p>Now that you have some experience with the &lt;code>profile&lt;/code> builtin, let&amp;rsquo;s compare the
+performance of an actual rust-based builtin to similar functionality written
+natively in bash for atom version comparisons.&lt;/p>
+&lt;p>First, download a copy of &lt;code>eapi7-ver.eclass&lt;/code> that contains the bash
+implementation of the version comparison algorithm used in Gentoo for the
+&lt;code>ver_test&lt;/code> command in portage and pkgcore.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ wget https://raw.githubusercontent.com/gentoo/gentoo/master/eclass/eapi7-ver.eclass
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Next, check its performance using the &lt;code>profile&lt;/code> builtin. Note that if you
+started a new bash shell, the &lt;code>profile&lt;/code> builtin will have to be reloaded.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">source&lt;/span> eapi7-ver.eclass
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.000030955s, loops: 10648, per loop: 281.745µs
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>With that baseline established for the native bash implementation, let&amp;rsquo;s create
+a new builtin that wraps pkgcraft support to provide the same functionality.
+It&amp;rsquo;s probably easiest to copy pkgcraft&amp;rsquo;s &lt;code>ver_test&lt;/code> builtin into pkgcraft-bash
+with minor alterations in order to make it dynamically loadable.&lt;/p>
+&lt;p>Use the following diff that currently applies against the pkgcraft-bash repo to
+include &lt;code>ver_test&lt;/code> support (or use it as a guide if it has fallen out of date).&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;span class="lnt">63
+&lt;/span>&lt;span class="lnt">64
+&lt;/span>&lt;span class="lnt">65
+&lt;/span>&lt;span class="lnt">66
+&lt;/span>&lt;span class="lnt">67
+&lt;/span>&lt;span class="lnt">68
+&lt;/span>&lt;span class="lnt">69
+&lt;/span>&lt;span class="lnt">70
+&lt;/span>&lt;span class="lnt">71
+&lt;/span>&lt;span class="lnt">72
+&lt;/span>&lt;span class="lnt">73
+&lt;/span>&lt;span class="lnt">74
+&lt;/span>&lt;span class="lnt">75
+&lt;/span>&lt;span class="lnt">76
+&lt;/span>&lt;span class="lnt">77
+&lt;/span>&lt;span class="lnt">78
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-diff" data-lang="diff">&lt;span class="line">&lt;span class="cl">&lt;span class="gh">diff --git a/src/builtins.rs b/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">index 83a6e63..7055281 100644
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>&lt;span class="gd">--- a/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+++ b/src/builtins.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gu">@@ -1,6 +1,7 @@
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span> use scallop::builtins::DynBuiltin;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> mod atom;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+mod ver_test;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> #[export_name = &amp;#34;profile_struct&amp;#34;]
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> static mut PROFILE_STRUCT: Option&amp;lt;DynBuiltin&amp;gt; = None;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">@@ -22,9 +23,10 @@ pub(super) extern &amp;#34;C&amp;#34; fn initialize() {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span> // update struct pointers
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> unsafe {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> atom::ATOM_STRUCT = Some(atom::BUILTIN.into());
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ ver_test::VER_TEST_STRUCT = Some(ver_test::BUILTIN.into());
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> // add builtins to known run() mapping
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">- update_run_map([&amp;amp;atom::BUILTIN]);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+ update_run_map([&amp;amp;atom::BUILTIN, &amp;amp;ver_test::BUILTIN]);
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">diff --git a/src/builtins/ver_test.rs b/src/builtins/ver_test.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>new file mode 100644
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">index 0000000..24dfecc
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gh">&lt;/span>&lt;span class="gd">--- /dev/null
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>&lt;span class="gi">+++ b/src/builtins/ver_test.rs
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gu">@@ -0,0 +1,46 @@
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gu">&lt;/span>&lt;span class="gi">+#![cfg(feature = &amp;#34;pkgcraft&amp;#34;)]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use std::str::FromStr;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use pkgcraft::atom::Version;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::builtins::{Builtin, ExecStatus, DynBuiltin};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::variables::string_value;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+use scallop::{Error, Result};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+const LONG_DOC: &amp;amp;str = &amp;#34;Perform comparisons on package version strings.&amp;#34;;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+#[doc = stringify!(LONG_DOC)]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(crate) fn run(args: &amp;amp;[&amp;amp;str]) -&amp;gt; Result&amp;lt;ExecStatus&amp;gt; {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let pvr = string_value(&amp;#34;PVR&amp;#34;).unwrap_or_else(|| String::from(&amp;#34;&amp;#34;));
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let pvr = pvr.as_str();
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let (v1, op, v2) = match args.len() {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 2 if pvr.is_empty() =&amp;gt; return Err(Error::Builtin(&amp;#34;$PVR is undefined&amp;#34;.into())),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 2 =&amp;gt; (pvr, args[0], args[1]),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ 3 =&amp;gt; (args[0], args[1], args[2]),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ n =&amp;gt; return Err(Error::Builtin(format!(&amp;#34;only accepts 2 or 3 args, got {n}&amp;#34;))),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ };
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let v1 = Version::from_str(v1)?;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let v2 = Version::from_str(v2)?;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ let ret = match op {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-eq&amp;#34; =&amp;gt; v1 == v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-ne&amp;#34; =&amp;gt; v1 != v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-lt&amp;#34; =&amp;gt; v1 &amp;lt; v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-gt&amp;#34; =&amp;gt; v1 &amp;gt; v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-le&amp;#34; =&amp;gt; v1 &amp;lt;= v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ &amp;#34;-ge&amp;#34; =&amp;gt; v1 &amp;gt;= v2,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ _ =&amp;gt; return Err(Error::Builtin(format!(&amp;#34;invalid operator: {op}&amp;#34;))),
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ };
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ Ok(ExecStatus::from(ret))
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+}
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+#[export_name = &amp;#34;ver_test_struct&amp;#34;]
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(super) static mut VER_TEST_STRUCT: Option&amp;lt;DynBuiltin&amp;gt; = None;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+pub(super) static BUILTIN: Builtin = Builtin {
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ name: &amp;#34;ver_test&amp;#34;,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ func: run,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ help: LONG_DOC,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+ usage: &amp;#34;ver_test 1 -lt 2-r1&amp;#34;,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">+};
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gi">&lt;/span>&lt;span class="gd">--
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="gd">&lt;/span>2.35.1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Once the diff is applied, rebuild pkgcraft-bash with pkgcraft support enabled
+from the root of the workspace which will currently build the profile, atom,
+and ver_test builtins.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ cargo build -p pkgcraft-bash --features pkgcraft
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now, profile &lt;code>ver_test&lt;/code> again making sure to use the builtin implementation.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">unset&lt;/span> -f ver_test
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ &lt;span class="nb">enable&lt;/span> -f target/debug/libpkgcraft_bash.so profile ver_test
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ profile ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">profiling: ver_test 1.2.3_alpha1-r1 -gt 1.2.3_alpha1-r2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">elapsed 3.000010097s, loops: 252482, per loop: 11.882µs
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>From the result, note that the rust implementation is over 20x faster than the
+native bash version. Through further work this can potentially be improved with
+more changes to bash&amp;rsquo;s builtin support. For example, bash currently does a
+binary search in its builtins array to find if a matching builtin exists before
+executing it. This should be quicker to perform as a simple hash table lookup
+instead.&lt;/p>
+&lt;h2 id="rust-or-bash-your-call">Rust or bash, your call&lt;/h2>
+&lt;p>Overall, I personally find most programming languages to be more maintainable
+than bash in the long-term for any well-written code longer than relatively
+simple scripts. Add in rust&amp;rsquo;s ability to be exported via its FFI interface to
+any language that has C interoperability and it should become apparent why I
+prefer implementing such support in rust rather than bash.&lt;/p>
+&lt;p>If scallop keeps improving its wrapper API around bash, support for writing
+bash functionality in rust should continue to improve as well. Looking forward,
+it&amp;rsquo;s feasible something like &lt;a href="https://github.com/bats-core/bats-core">bats&lt;/a>
+could be written in rust or scallop&amp;rsquo;s functionality could be exported to
+another language, for example allowing python to natively interact with bash.&lt;/p>
+&lt;p>For the time being, I&amp;rsquo;ll just continue using it for one of the main reasons I
+created it: trying to avoid writing extensive code in bash.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>They can currently be found in the &lt;code>pkgsh/builtins&lt;/code> subdirectory of the
+&lt;a href="https://github.com/pkgcraft/pkgcraft/tree/main/src/pkgsh/builtins">pkgcraft crate&lt;/a>.&amp;#160;&lt;a href="https://pkgcraft.github.io/posts/rustifying-bash-builtins/#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>The &lt;a href="https://crates.io/crates/ctor">ctor crate&lt;/a> can make this easier via procedural macros.&amp;#160;&lt;a href="https://pkgcraft.github.io/posts/rustifying-bash-builtins/#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content><category scheme="https://pkgcraft.github.io/tags/bash/" term="bash" label="bash"/><category scheme="https://pkgcraft.github.io/tags/pkgcraft/" term="pkgcraft" label="pkgcraft"/><category scheme="https://pkgcraft.github.io/tags/rust/" term="rust" label="rust"/></entry><entry><title type="text">Extending bash</title><link rel="alternate" type="text/html" href="https://pkgcraft.github.io/posts/extending-bash/"/><id>https://pkgcraft.github.io/posts/extending-bash/</id><updated>2022-07-15T05:54:50+00:00</updated><published>2022-01-25T01:29:42-07:00</published><author><uri>https://pkgcraft.github.io/</uri></author><rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</rights><summary type="html">Basing a package manager and related specification on bash is a mistake. Familiarity and hackability are great in the short-term, but as the novelty wears off it becomes clear that maintainability, efficiency, and other attributes hard to wrest from bash&amp;rsquo;s rigid design all suffer.</summary><content type="html">&lt;p>Basing a package manager and related specification on bash is a mistake.
+Familiarity and hackability are great in the short-term, but as the novelty
+wears off it becomes clear that maintainability, efficiency, and other
+attributes hard to wrest from bash&amp;rsquo;s rigid design all suffer. As long as
+compatibility remains important for pkgcraft that decision can&amp;rsquo;t be altered;
+however, that doesn&amp;rsquo;t mean nothing can be done to improve the situation.&lt;/p>
+&lt;p>One option is to go pkgcore&amp;rsquo;s route, using IPC with a bash daemon. This enables
+sharing bash processes between separate tasks rather than relying on a
+simplistic exec-per-use scheme. Among other effects, this makes pkgcore&amp;rsquo;s
+metadata generation approximately five times faster than its main competitor.
+While providing many marginal improvements, this daemonized approach still
+doesn&amp;rsquo;t escape the restrictive boundaries of regular shell usage. Among other
+downsides, pkgcore requires subshells (meaning additional processes) to avoid
+environment leaks during metadata generation and uses hacky RPC signaling
+across pipes since it&amp;rsquo;s hard to work with anything else natively in bash.&lt;/p>
+&lt;p>Pkgcraft aims to move beyond daemon functionality and achieve better lower
+level integration. The dream of replacing bash with something threadable and
+modern is enticing, but it&amp;rsquo;s fairly impossible in the short-term and thus
+disregarded. Instead, pkgcraft dives directly into the pit of insanity; it
+forks bash&lt;sup id="fnref:1">&lt;a href="https://pkgcraft.github.io/posts/extending-bash/#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> in an effort to achieve its goals.&lt;/p>
+&lt;h3 id="parallelism-problems">Parallelism problems&lt;/h3>
+&lt;p>Since pkgcraft goes to the extent of forking bash, it also takes on the various
+deficiencies that hinder its use as a library. For a start, bash is not
+thread-safe or reentrant at all. The current design uses an extensive amount of
+global mutables to track both its parser and shell state. Bash uses bison which
+supports generating reentrant parsers, but the shell itself requires extensive
+rework for that to be feasible on a global scale.&lt;/p>
+&lt;p>With that in mind, in order to support parallel usage a process pool or similar
+design must be used. Currently this isn&amp;rsquo;t something that can easily be dropped
+into place like python&amp;rsquo;s multiprocessing pool support. Parallelism in rust
+centers around threading since its memory safety through enforced lifetimes
+highlights threaded execution that&amp;rsquo;s guaranteed data-race free. This means that
+most data parallelism crates similar to rayon only support threaded operation,
+disregarding multi-process support entirely. At some point, pkgcraft will have
+to address this and probably create its own pool or parallelized iterator
+support that reuses processes.&lt;/p>
+&lt;h3 id="error-handling">Error handling&lt;/h3>
+&lt;p>Beyond parallelism issues, bash leverages longjmp() and frame unwinding for its
+error handling. This is understandable due to its age, chosen language, and
+minimal dependencies, but it doesn&amp;rsquo;t lend itself well to interoperability with
+rust. For pkgcraft, bash is wrapped where its C code is called from the rust
+library and then it can call back into rust support exported to C. The issue
+with that is unwinding across rust-based frames from C is undefined behavior.
+Hopefully at some point the &amp;ldquo;C-unwind&amp;rdquo; ABI&lt;sup id="fnref:2">&lt;a href="https://pkgcraft.github.io/posts/extending-bash/#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> and other related FFI work in
+rust makes it into stable.&lt;/p>
+&lt;p>With respect to longjmp() usage, in order to avoid null jump buffers the forked
+version of bash tries to establish jump targets on the main entry points used
+by the rust library. This isn&amp;rsquo;t necessary for standard bash because its top
+level jump points are all in main() which isn&amp;rsquo;t used when built as a library.
+Without this, most error handling segfaults when using &lt;code>set -e&lt;/code> because bash
+tries to jump to an empty jump buffer.&lt;/p>
+&lt;p>To cap off its unfriendly error handling, bash generally dumps all its error
+messages to stderr. Clearly this isn&amp;rsquo;t wanted when used as a library,
+especially when parallelized. To avoid this, the rust library passes in
+callbacks for error and warning handling that bash calls, passing the raw
+messages back to rust which are then converted into native rust errors or
+logged.&lt;/p>
+&lt;p>The remaining issue is that unless something like &lt;code>set -e&lt;/code> is being used on the
+bash side, most errors do not cause immediate returns, exits, or any trigger
+that could be used on the rust side to return a corresponding error result. To
+work around this, the most recent bash error is stored on the rust side in a
+thread-local variable that can be accessed after relevant calls in order to
+determine their error status. This allows functionality such as returning error
+results on failed &lt;code>source&lt;/code> calls while retaining the bash error message without
+having to use &lt;code>set -e&lt;/code>, subshells, and redirection in order to achieve a
+similar effect in native bash.&lt;/p>
+&lt;h3 id="leveraging-builtins">Leveraging builtins&lt;/h3>
+&lt;p>In terms of extensibility, bash provides support for writing builtins that can
+be called like any other command. For example, &lt;code>set&lt;/code>, &lt;code>local&lt;/code>, &lt;code>echo&lt;/code>, and many
+more commands provided by bash are builtins. Pkgcraft intends to use builtins
+for all the commands that would either be exposed as functions or other public
+callables. All other internal functionality will be implemented as methods
+on the shell instance wrapping the bash library.&lt;/p>
+&lt;p>The difficulty comes with sharing state across the FFI border since the
+builtins are written in rust, but are called from C in bash. Therefore it&amp;rsquo;s not
+easy to write them in a fashion that allows reuse and inter-builtin calls while
+also passing some form of mutable context parameter. Once again, pkgcraft uses
+a mutable, thread-local instance that builtins are able to import and use
+within closures to access and modify build data as required. While somewhat
+ugly, this does allow avoiding the even uglier bash variable hacks used by
+pkgcore.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>Pkgcraft&amp;rsquo;s bash fork is available at &lt;a href="https://github.com/pkgcraft/bash">https://github.com/pkgcraft/bash&lt;/a>.&amp;#160;&lt;a href="https://pkgcraft.github.io/posts/extending-bash/#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html">https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html&lt;/a>&amp;#160;&lt;a href="https://pkgcraft.github.io/posts/extending-bash/#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></content><category scheme="https://pkgcraft.github.io/tags/bash/" term="bash" label="bash"/></entry><entry><title type="text">The Timesink Chronicles</title><link rel="alternate" type="text/html" href="https://pkgcraft.github.io/posts/timesink-chronicles/"/><id>https://pkgcraft.github.io/posts/timesink-chronicles/</id><updated>2022-07-15T05:54:50+00:00</updated><published>2022-01-18T16:01:26-07:00</published><author><uri>https://pkgcraft.github.io/</uri></author><rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)</rights><summary type="html">Before beginning these grand timesink chronicles, allow me to review my historical use of Gentoo that helps explain this project&amp;rsquo;s existence. Note that this is pertains only to my experience and opinions.</summary><content type="html">&lt;p>Before beginning these grand timesink chronicles, allow me to review my
+historical use of Gentoo that helps explain this project&amp;rsquo;s existence. Note that
+this is pertains only to my experience and opinions.&lt;/p>
+&lt;h5 id="2005----getting-sucked-in">2005 &amp;ndash; Getting sucked in&lt;/h5>
+&lt;p>I first installed Gentoo around 2005, near the probable peak of outward
+interest in the project. At this point no EAPIs existed, portage was the only
+choice, and the project felt exciting probably due to the level of interest at
+the time. From an outsider&amp;rsquo;s perspective, portage was doing an adequate job
+since core counts were low for consumer machines. Therefore, parallelization
+wasn&amp;rsquo;t overly important and improving the package tree was generally a higher
+priority.&lt;/p>
+&lt;p>In retrospect, the project should have capitalized more off the interest wave
+to explore other ideas before, in effect, chaining itself to bash for life.
+While I understand the upsides for selecting bash as a base, the downsides are
+quite large from a developer&amp;rsquo;s perspective as bash is highly focused on two
+things, running scripts and interactive shell usage. Its underlying structure
+leaves a lot to be desired when trying to force it outside those bounds.&lt;/p>
+&lt;h5 id="2010----new-package-managers-on-the-block">2010 &amp;ndash; New package managers on the block&lt;/h5>
+&lt;p>Fast forward about 5 years to 2010 when EAPI 3 came out and two new package
+managers (pkgcore and paludis) joined portage, evolving as part of the
+specification process and proving its existence in aiding new development.
+Having tried both, I was impressed by the speed of pkgcore in relation to my
+experience with portage, both being mainly written in python. The main reasons
+for this runtime difference come from pkgcore&amp;rsquo;s more streamlined restriction
+framework, overall cleaner design, and ebuild daemon functionality that
+avoided re-execing bash as much as possible. Sadly enough, as more features
+made it into new EAPIs, pkgcore slowly fell behind mostly due to getting
+bus-factored into near stasis.&lt;/p>
+&lt;p>As could be discovered when trying out the alternative package managers,
+portage was starting to lag behind in a number of areas that it still suffers
+from including overall design and maintainability. While a number of features
+and performance improvements did find their way from pkgcore to portage around
+this time, in my opinion, Gentoo as a project should have thrown more support
+behind moving to or subsuming pkgcore because it would quickly become a
+nontrivial task in later years.&lt;/p>
+&lt;h5 id="2015----reviving-a-dying-project">2015 &amp;ndash; Reviving a dying project&lt;/h5>
+&lt;p>2015 was about the time I started getting involved in pkgcore-related
+development. For my part, most of my work on pkgcore and its related tools was
+due to curiosity, interest, and a hesitancy to let the project entirely die.
+Over the next few years I would drag pkgcore along, keeping it barely alive,
+culminating in rewriting pkgcheck (the pkgcore-based ebuild linter) nearly from
+scratch in an effort to parallelize it as much as its python-based nature
+allowed.&lt;/p>
+&lt;p>During this time, it became apparent to me that Gentoo as a development
+community often felt directionless and highly change averse. Democratizing
+leadership while keeping the foundation separate lead to weak, overarching
+vision and therefore a rudderless appearance for the project. Personally I
+think the council should actively define priorities for the project and even
+use funding where appropriate to aid in that effort rather than its mainly
+reactionary and ratification style meetings.&lt;/p>
+&lt;h5 id="2020-onwards----accepting-fate">2020 onwards &amp;ndash; Accepting fate&lt;/h5>
+&lt;p>By 2020, it had become clear to me that pkgcore and its related tools were
+evolutionary dead ends. I felt enough work had been done to prove their worth
+and underlying design was better than portage in a number of ways, but that
+wasn&amp;rsquo;t able to grow interest to a level where moving on from portage was
+feasible. In order to have had a better future, more focus should have been
+placed on merging pkgcore&amp;rsquo;s design with portage during the 2010 era when it was
+potentially feasible to do, by 2020 it was all but impossible.&lt;/p>
+&lt;p>With that in mind, I passed on maintenance to those with a vested interest in
+the project mainly due to Gentoo beginning to seriously use pkgcheck for CI
+against the main tree after the parallelization work was merged. I imagine the
+project will continue on life-support style maintenance as long as its
+alternative focuses on being an interactive commit tool, performing shockingly
+terrible at linting runs on any significant scale.&lt;/p>
+&lt;p>Regarding my decision to drop pkgcore, in essence I never agreed with some of
+the underlying design and didn&amp;rsquo;t want to nearly rewrite it as I had been forced
+to for pkgcheck. For example, continuing in portage&amp;rsquo;s footsteps using an
+interpreted language like python for the core package manager felt like a poor
+long-term choice. At the time the fork occurred, it probably made sense but
+doesn&amp;rsquo;t anymore. In any case, if I was going to start over it would be
+drastically different than pkgcore from the outset.&lt;/p>
+&lt;h5 id="enter-pkgcraft">Enter&amp;hellip; pkgcraft&lt;/h5>
+&lt;p>Having kicked around the idea of rewriting pkgcore in rust since early 2017, it
+slowly became a reality as the ecosystem grew enough where third party
+libraries existed to support the intended design. Whether it will surpass
+pkgcore&amp;rsquo;s efforts or fade away as an ephemeral dream remains to be seen, but
+hopefully these chronicles entertain, inform, or inspire others to support this
+timesink and strive towards their own.&lt;/p></content><category scheme="https://pkgcraft.github.io/tags/gentoo/" term="Gentoo" label="Gentoo"/></entry></feed>
