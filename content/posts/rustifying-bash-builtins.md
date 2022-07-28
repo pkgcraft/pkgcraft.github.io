@@ -97,7 +97,7 @@ rust-based builtins work.
 #### Development environment
 
 First, the required tools for building the code should be installed. This
-includes a recent rust compiler, C compiler, meson, and a version of bash that
+includes a recent rust compiler, C compiler, and a recent version of bash that
 supports loading dynamic builtins from shared objects. I leave it up to the
 reader to leverage `rustup` and/or their distro's package manager to install
 the required build tools (and others such as `git` that are implied
@@ -120,12 +120,6 @@ $ cargo build -p pkgcraft-bash --features pkgcraft
 
 This should create the shared pkgcraft-bash library
 `target/debug/libpkgcraft_bash.so` from which dynamic builtins can be loaded.
-Note that in order to use the library you'll need to point it to the scallop
-library it links against via:
-
-```bash
-$ export LD_LIBRARY_PATH="${PWD}"/target/debug/meson
-```
 
 ### Profiling
 
