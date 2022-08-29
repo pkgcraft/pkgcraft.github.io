@@ -4,7 +4,70 @@ title: About Pkgcraft
 meta: false
 ---
 
-Pkgcraft is a highly experimental, rust-based, tooling ecosystem for Gentoo.
+# FAQ
+
+- Why does this project exist? Isn't portage good enough?
+
+If one is familiar with Python code, portage's inner workings can be succinctly
+described as a towering spaghetti pile largely composed of technical debt that
+often lacks efficiency. While this problem has been poked at over the years,
+Gentoo has largely ignored the underlying issue causing projects like
+[pkgcore](https://github.com/pkgcore) and
+[paludis](https://paludis.exherbo.org/) to arise.
+
+Pkgcraft aims to provide new insight and support via language bindings on top
+of its core functionality while at the same time experimenting with crazier
+ideas including bundling an extended version of bash, enabling greater
+efficiency and supporting static binaries for the package manager itself (which
+is semi-relevant for source-based package managers).
+
+- Is this a portage rewrite or is pkgcraft targeting replacing portage?
+
+No, while both projects generally support the functionality defined in
+[PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
+does not plan to duplicate portage's interface or feature set. At its most
+basic, it intends to provide core functionality allowing third parties to build
+more efficient tools on top of it. This does allow for a future in which
+portage or other established tools leverage pkgcraft to improve their
+capabilities, but that is entirely up to the whims of Gentoo and other
+developers.
+
+In pkgcraft's case, it may provide alternatives encompassing functionality
+provided some of the traditional Gentoo-related tools in the future, but most
+of that work is a long ways off.
+
+- Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
+
+Choosing Rust was mostly a pragmatic decision. I wanted to use a compiled
+programming language meeting the following requirements:
+
+1. decent memory safety guarantees
+2. active community improving the language and core implementation
+3. able to work with and create efficient, C compatible libraries
+4. relatively large, native library ecosystem
+
+Narrowing the field with those priorities, the main candidates are currently
+Rust and Go with other stragglers failing for various reasons such as Nim, Zig,
+and probably some restricted C++ subset. From those two options, Go is too
+restrictive for how I wanted to develop pkgcraft and doesn't support the same
+level of C support seen in Rust.
+
+Rust's main weaknesses in relation to pkgcraft's goals are probably its current
+lack of minor architecture support (compared to C and C++) and its steep
+learning curve.
+
+With regards to architecture support, I think this will be resolved with more
+time if the language maintains or continues growing its popularity via projects
+like the GCC frontend for Rust and/or porting LLVM to more architectures.
+
+In terms of a steep learning curve in comparison to something like Python, this
+isn't historically relevant for projects related to Gentoo package management.
+Or stated another way, nearly all major code development for package managers
+targeting Gentoo has been done by singular teams regardless of implementation
+language. Those "teams" have changed over time, but rarely are there multiple
+developers doing large, sustained amounts of work on the same project. In
+short, my response to the steep learning curve is that pkgcraft aims to provide
+bindings for other "easier" languages that developers may use as they desire.
 
 # Project goals
 
