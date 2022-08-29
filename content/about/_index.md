@@ -9,9 +9,9 @@ meta: false
 - Why does this project exist? Isn't portage good enough?
 
 If one is familiar with Python code, portage's inner workings can be succinctly
-described as a towering spaghetti pile largely composed of technical debt that
-often lacks efficiency. While this problem has been poked at over the years,
-Gentoo has largely ignored the underlying issue causing projects like
+described as a towering spaghetti pile largely composed of technical debt and
+inefficiency. While this problem has been poked at over the years, Gentoo has
+largely ignored the underlying issue causing projects like
 [pkgcore](https://github.com/pkgcore) and
 [paludis](https://paludis.exherbo.org/) to arise.
 
