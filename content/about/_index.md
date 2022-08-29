@@ -49,7 +49,7 @@ programming language meeting the following requirements:
 Narrowing the field with those priorities, the main candidates are currently
 Rust and Go with other stragglers failing for various reasons such as Nim, Zig,
 and probably some restricted C++ subset. From those two options, Go is too
-restrictive for how I wanted to develop pkgcraft and doesn't support the same
+restrictive for how I wanted to develop pkgcraft and doesn't achieve the same
 level of C support seen in Rust.
 
 Rust's main weaknesses in relation to pkgcraft's goals are probably its current
@@ -58,7 +58,7 @@ learning curve.
 
 With regards to architecture support, I think this will be resolved with more
 time if the language maintains or continues growing its popularity via projects
-like the GCC frontend for Rust and/or porting LLVM to more architectures.
+like the GCC front-end for Rust and/or porting LLVM to more architectures.
 
 In terms of a steep learning curve in comparison to something like Python, this
 isn't historically relevant for projects related to Gentoo package management.
