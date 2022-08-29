@@ -48,10 +48,10 @@ programming language meeting the following requirements:
 4. relatively large, native library ecosystem
 
 Narrowing the field with those priorities, the main candidates are currently
-Rust and Go with other stragglers failing for various reasons such as Nim, Zig,
-and probably some restricted C++ subset. From those two options, Go is too
+Rust and Go with other stragglers failing for various reasons including Nim,
+Zig, and probably some subset of C++. From those two options, Go is too
 restrictive for how I wanted to develop pkgcraft and doesn't achieve the same
-level of C support seen in Rust.
+level of C support allowed by Rust.
 
 Rust's main weaknesses in relation to pkgcraft's goals are probably its current
 lack of minor architecture support (compared to C and C++) and its steep
