@@ -32,9 +32,10 @@ portage or other established tools leverage pkgcraft to improve their
 capabilities, but that is entirely up to the whims of Gentoo and other
 developers.
 
-In pkgcraft's case, it may provide alternatives encompassing functionality
-provided some of the traditional Gentoo-related tools in the future, but most
-of that work is a long ways off.
+In pkgcraft's case, it may develop alternatives encompassing functionality
+currently provided by traditional, Gentoo-related tools, but the majority of
+that work is a long way off and probably won't aim for compatibility beyond PMS
+support.
 
 - Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
