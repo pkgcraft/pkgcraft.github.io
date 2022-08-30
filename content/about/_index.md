@@ -6,7 +6,7 @@ meta: false
 
 # FAQ
 
-- Why does this project exist? Isn't portage good enough?
+- ### Why does this project exist? Isn't portage good enough?
 
 If one is familiar with Python code, portage's inner workings can be succinctly
 described as a towering spaghetti pile largely composed of technical debt and
@@ -26,7 +26,7 @@ version of bash, providing greater efficiency and allowing static binaries for
 the package manager itself (which is semi-relevant for source-based package
 managers).
 
-- Is this a portage rewrite or is pkgcraft targeting replacing portage?
+- ### Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
 No, while both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
@@ -41,7 +41,7 @@ currently provided by traditional, Gentoo-related tools, but the majority of
 that work is a long way off and probably won't aim for compatibility beyond PMS
 support.
 
-- Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
+- ### Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
 Choosing Rust was mostly a pragmatic decision. I wanted to use a compiled
 programming language meeting the following requirements:
