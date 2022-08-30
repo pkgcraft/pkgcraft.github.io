@@ -31,7 +31,7 @@ managers).
 
 - ### Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
-No, while both projects implement functionality described in
+While both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
 does not plan to duplicate portage's interface or feature set. At its most
 basic, it intends to be a base to build more efficient tools. This does allow
