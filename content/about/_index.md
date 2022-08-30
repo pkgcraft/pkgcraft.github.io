@@ -11,28 +11,32 @@ meta: false
 If one is familiar with Python code, portage's inner workings can be succinctly
 described as a towering spaghetti pile largely composed of technical debt and
 inefficiency. While this problem has been poked at over the years, Gentoo has
-largely ignored the underlying issue causing projects like
+largely ignored the underlying issue leading to projects such as
 [pkgcore](https://github.com/pkgcore) and
-[paludis](https://paludis.exherbo.org/) to arise.
+[paludis](https://paludis.exherbo.org/) to arise and holding back progress
+since few developers want to untangle the design in order to implement complex
+features or improve the situation.
 
-Pkgcraft aims to provide new insight and support via language bindings on top
-of its core functionality while at the same time experimenting with crazier
-ideas including bundling an extended version of bash, enabling greater
-efficiency and supporting static binaries for the package manager itself (which
-is semi-relevant for source-based package managers).
+Pkgcraft aims to take a different approach, supporting language bindings on top
+of its core library allowing developers to take advantage of optimized
+functionality rather than being forced to reimplement it.
+
+Beyond bindings, it also experiments with ideas including bundling an extended
+version of bash, providing greater efficiency and allowing static binaries for
+the package manager itself (which is semi-relevant for source-based package
+managers).
 
 - Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
-No, while both projects generally support the functionality defined in
+No, while both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
 does not plan to duplicate portage's interface or feature set. At its most
-basic, it intends to provide core functionality allowing third parties to build
-more efficient tools on top of it. This does allow for a future in which
-portage or other established tools leverage pkgcraft to improve their
-capabilities, but that is entirely up to the whims of Gentoo and other
-developers.
+basic, it intends to be a base for third parties to build more efficient tools.
+This does allow for a future in which portage or other established tools
+leverage pkgcraft to improve their capabilities, but that is entirely up to the
+whims of Gentoo and other developers.
 
-In pkgcraft's case, it may develop alternatives encompassing functionality
+In pkgcraft's case, it may develop alternatives encompassing use cases
 currently provided by traditional, Gentoo-related tools, but the majority of
 that work is a long way off and probably won't aim for compatibility beyond PMS
 support.
