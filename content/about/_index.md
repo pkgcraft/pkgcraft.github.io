@@ -9,13 +9,15 @@ meta: false
 - ### Why does this project exist? Isn't portage good enough?
 
 If one is familiar with Python code, portage's inner workings can be succinctly
-described as a towering spaghetti pile largely composed of technical debt and
-inefficiency. While this problem has been poked at over the years, Gentoo has
-largely ignored the underlying issue leading to projects such as
+described as a towering pile of spaghetti largely composed of technical debt
+and inefficiency; its main upsides being user-interface familiarity and years
+of accumulated bug fixes. While its design has been criticized over the years,
+Gentoo has mostly ignored portage's underlying issues leading to
 [pkgcore](https://github.com/pkgcore) and
-[paludis](https://paludis.exherbo.org/) to arise and holding back progress
-since few developers want to untangle the design in order to implement complex
-features or improve the situation.
+[paludis](https://paludis.exherbo.org/) arising, various other fallout such as
+repoman getting replaced by [pkgcheck](https://github.com/pkgcore/pkgcheck),
+and a general restraint on progress since few developers volunteer to untangle
+the code in order to implement complex features or improve the situation.
 
 Pkgcraft aims to take a different approach, supporting language bindings on top
 of its core library allowing developers to take advantage of optimized
