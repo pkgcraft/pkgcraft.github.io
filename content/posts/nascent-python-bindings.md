@@ -12,11 +12,10 @@ years I've seen the same algorithms implemented in Python, C, Bash, Go, and
 more at varying levels of success.
 
 Now, I must note that I don't mean to disparage these efforts especially when
-done for fun or to learn a new language; however, it often seems they end up
-being used in tools or services used by the wider community. Then as the
-specification slowly evolves and original authors move on, developers are stuck
-maintaining multiple implementations if they want to keep the related tools or
-services relevant.
+done for fun or to learn a new language; however, it often seems they end up in
+tools or services used by the wider community. Then as the specification slowly
+evolves and authors move on, developers are stuck maintaining multiple
+implementations if they want to keep the related tools or services relevant.
 
 In an ideal world, the canonical implementation for a core feature set is
 written in a language that can be easily bound by other languages offering
