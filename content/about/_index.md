@@ -14,14 +14,16 @@ and inefficiency; its main upsides being user-interface familiarity and years
 of accumulated bug fixes. While its design has been criticized over the years,
 Gentoo has mostly ignored portage's underlying issues leading to
 [pkgcore](https://github.com/pkgcore) and
-[paludis](https://paludis.exherbo.org/) arising, various other fallout such as
+[paludis](https://paludis.exherbo.org/) arising, various fallout such as
 repoman getting replaced by [pkgcheck](https://github.com/pkgcore/pkgcheck),
 and a general restraint on progress since few developers volunteer to untangle
 the code in order to implement complex features or improve the situation.
 
 Pkgcraft aims to take a different approach, supporting language bindings on top
-of its core library allowing developers to take advantage of optimized
-functionality rather than being forced to reimplement it.
+of a core library allowing developers to take advantage of optimized
+functionality rather than being forced to reimplement it. This hopefully aids
+code reuse and decreases development time for third parties while keeping focus
+on improving pkgcraft's API and related documentation.
 
 Beyond bindings, it also experiments with ideas including bundling an extended
 version of bash, providing greater efficiency and allowing static binaries for
@@ -33,10 +35,10 @@ managers).
 No, while both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
 does not plan to duplicate portage's interface or feature set. At its most
-basic, it intends to be a base for third parties to build more efficient tools.
-This does allow for a future in which portage or other established tools
-leverage pkgcraft to improve their capabilities, but that is entirely up to the
-whims of Gentoo and other developers.
+basic, it intends to be a base to build more efficient tools. This does allow
+for a future in which portage or other established tools leverage pkgcraft to
+improve their capabilities, but that is entirely up to the whims of Gentoo
+and other developers.
 
 In pkgcraft's case, it may develop alternatives encompassing use cases
 currently provided by traditional, Gentoo-related tools, but the majority of
