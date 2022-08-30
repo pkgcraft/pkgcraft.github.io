@@ -64,9 +64,11 @@ Rust's main weaknesses in relation to pkgcraft's goals are probably its current
 lack of minor architecture support (compared to C and C++) and its steep
 learning curve.
 
-With regards to architecture support, I think this will be resolved with more
-time if the language maintains or continues growing its popularity via projects
-like the GCC front-end for Rust and/or porting LLVM to more architectures.
+With regards to architecture support, I think this may be resolved with more
+time via projects like the [GCC front-end for
+Rust](https://github.com/Rust-GCC/gccrs) and general LLVM porting work
+especially if Rust's corporate popularity continues to grow, providing more
+opportunities for funding.
 
 In terms of a steep learning curve in comparison to something like Python, this
 isn't historically relevant for projects related to Gentoo package management.
