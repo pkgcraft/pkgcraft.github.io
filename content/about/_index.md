@@ -70,12 +70,13 @@ like the GCC front-end for Rust and/or porting LLVM to more architectures.
 
 In terms of a steep learning curve in comparison to something like Python, this
 isn't historically relevant for projects related to Gentoo package management.
-Or stated another way, nearly all major code development for package managers
+Or stated another way, nearly all major development for package managers
 targeting Gentoo has been done by singular teams regardless of implementation
 language. Those "teams" have changed over time, but rarely are there multiple
 developers doing large, sustained amounts of work on the same project. In
 short, my response to the steep learning curve is that pkgcraft aims to provide
-bindings for other "easier" languages that developers may use as they desire.
+bindings for "easier" languages that may be used to avoid rust-based
+development.
 
 # Project goals
 
