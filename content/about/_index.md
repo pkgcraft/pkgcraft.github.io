@@ -41,7 +41,15 @@ other developers.
 
 In pkgcraft's case, it may develop alternatives encompassing use cases
 currently provided by established tools, but the majority of that work is a
-long way off and probably won't aim for compatibility beyond PMS support.
+long way off and probably won't aim for compatibility beyond PMS support. For
+example, the current, planned design for the pkgcraft's package manager will be
+that of a build daemon supporting various front-ends, encompassing a much
+broader set of use cases than can be performed by portage itself. In theory, it
+could act both as a replacement for
+[catalyst](https://wiki.gentoo.org/wiki/Catalyst) and as a tinderbox setup when
+configured properly in addition to enabling more exotic features such as
+allowing the dep tree for a running build to be mangled and recalculated on the
+fly.
 
 - ### Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
