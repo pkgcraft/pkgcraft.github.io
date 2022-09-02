@@ -34,15 +34,14 @@ managers).
 While both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
 does not plan to duplicate portage's interface or feature set. At its most
-basic, it intends to be a base to build more efficient tools. This does allow
-for a future in which portage or other established tools leverage pkgcraft to
-improve their capabilities, but that is entirely up to the whims of Gentoo
-and other developers.
+basic, it intends to be a base for building efficient tools. This does allow
+for a future in which portage or other projects leverage pkgcraft to improve
+their capabilities, but that is entirely up to the whims of Gentoo and
+other developers.
 
 In pkgcraft's case, it may develop alternatives encompassing use cases
-currently provided by traditional, Gentoo-related tools, but the majority of
-that work is a long way off and probably won't aim for compatibility beyond PMS
-support.
+currently provided by established tools, but the majority of that work is a
+long way off and probably won't aim for compatibility beyond PMS support.
 
 - ### Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
