@@ -51,29 +51,27 @@ dep tree for a running build to be mangled and recalculated on the fly.
 
 - ### Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
-Choosing Rust was mostly a pragmatic decision. I wanted to use a compiled
-programming language meeting the following requirements:
+Choosing Rust was a pragmatic decision using the following requirements:
 
-1. decent memory safety guarantees
-2. active community improving the language and core implementation
-3. able to work with and create efficient, C compatible libraries
-4. relatively large, native library ecosystem
+1. compiled, statically type language
+2. decent memory safety guarantees
+3. active community improving the language and core implementation
+4. able to work with and create efficient, C compatible libraries
+5. relatively large, native library ecosystem
 
-Narrowing the field with those priorities, the main candidates are currently
-Rust and Go with other stragglers failing for various reasons including Nim,
-Zig, and probably some subset of C++. From those two options, Go is too
-restrictive for how I wanted to develop pkgcraft and doesn't achieve the same
-level of C support allowed by Rust.
+Narrowing the field with those priorities, the main candidates were Rust and Go
+with other stragglers failing for various reasons such as Nim and Zig. From
+those two options, Go is too restrictive for pkgcraft's envisioned design and
+doesn't achieve the same level of C support allowed by Rust. On the other hand,
+the main detriments of Rust in relation to pkgcraft's aspirations are its
+current lack of minor architecture support (compared to C and C++) and its
+steep learning curve, neither of which precludes pkgcraft from reaching its
+goals.
 
-Rust's main weaknesses in relation to pkgcraft's goals are probably its current
-lack of minor architecture support (compared to C and C++) and its steep
-learning curve.
-
-With regards to architecture support, I think this may be resolved with more
-time via projects like the [GCC front-end for
-Rust](https://github.com/Rust-GCC/gccrs) and general LLVM porting work
-especially if Rust's corporate popularity continues to grow, providing more
-opportunities for funding.
+With regards to architecture support, this may be resolved with more time via
+projects like the [GCC front-end for Rust](https://github.com/Rust-GCC/gccrs)
+and general LLVM porting work especially if Rust's corporate popularity
+continues to grow, providing more opportunities for funding.
 
 In terms of a steep learning curve in comparison to something like Python, this
 isn't historically relevant for projects related to Gentoo package management.
