@@ -53,7 +53,7 @@ dep tree for a running build to be mangled and recalculated on the fly.
 
 Choosing Rust was a pragmatic decision using the following requirements:
 
-1. compiled, statically type language
+1. compiled, statically-typed language
 2. decent memory safety guarantees
 3. active community improving the language and core implementation
 4. able to work with and create efficient, C compatible libraries
