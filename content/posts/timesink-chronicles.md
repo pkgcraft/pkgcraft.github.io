@@ -7,7 +7,7 @@ tags: ["Gentoo"]
 
 Before beginning these grand timesink chronicles, allow me to review my
 historical use of Gentoo that helps explain this project's existence. Note that
-this is pertains only to my experience and opinions.
+this narrative pertains only to my experience and opinions.
 
 ##### 2005 -- Getting sucked in
 
