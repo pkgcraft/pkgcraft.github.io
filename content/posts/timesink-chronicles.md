@@ -82,19 +82,47 @@ project will continue on life-support style maintenance as long as its
 alternative focuses on being an interactive commit tool, performing shockingly
 terrible at linting runs on any significant scale.
 
-Regarding my decision to drop pkgcore, in essence I never agreed with some of
-the underlying design and didn't want to nearly rewrite it as I had been forced
-to for pkgcheck. For example, continuing in portage's footsteps using an
-interpreted language like python for the core package manager felt like a poor
-long-term choice. At the time the fork occurred, it probably made sense but
-doesn't anymore. In any case, if I was going to start over it would be
-drastically different than pkgcore from the outset.
+Regarding my decision to drop pkgcore, in essence I never agreed with much of
+the design and didn't want to rewrite it as I had been forced to for pkgcheck.
+For example, continuing in portage's footsteps using an interpreted language
+like python for the core package manager felt like a poor long-term choice. At
+the time the pkgcore fork occurred, it probably made sense due to language
+availability and communal knowledge, but that's not the case anymore.
+
+Understandably, developing in an "easier" language like python has the usual
+upsides such as quicker prototyping, shallower learning curve, potentially more
+help from interested parties, etc; however, it has the usual downsides as well
+many of which directly conflict with goals I've dreamed of achieving such as
+language bindings support, embeddable bash, and a design supporting
+embarrassingly parallel workloads without having to resort to multiprocess
+pools and other types of GIL avoidance hacks.
+
+In any case, if I was going to start afresh why not waste the most time
+possible experimenting with the dreams I used to blunt the dullness of
+unraveling plates of python spaghetti code. At worst I figured I could use the
+opportunity to dive deeper into a language, exploring its FFI and C support and
+how they could be used to develop bindings for other languages. In the end,
+anything I created would likely be drastically different than any previous
+project I had discovered targeting Gentoo.
 
 ##### Enter... pkgcraft
 
-Having kicked around the idea of rewriting pkgcore in rust since early 2017, it
-slowly became a reality as the ecosystem grew enough where third party
-libraries existed to support the intended design. Whether it will surpass
-pkgcore's efforts or fade away as an ephemeral dream remains to be seen, but
-hopefully these chronicles entertain, inform, or inspire others to support this
-timesink and strive towards their own.
+Having kicked around the idea of rewriting portions of pkgcore in rust since
+early 2017[^1], the possibility coalesced into reality as the ecosystem grew
+enough where third party libraries existed to support much of the intended,
+underlying design. For those readers thinking or mentally screaming some
+variation of "What not C?", "Real programmers use C++", or perhaps "To do this
+right you should use Zig/Nim/..." see a brief discussion of the language
+decision [in the
+FAQ](https://pkgcraft.github.io/about/#why-isnt-pkgcraft-implemented-in-c-c-python-etc-why-choose-rust).
+
+Pkgcraft's goals leave many difficult challenges ahead, e.g. merging bash's C
+support with rust. Future posts will detail that work and other challenges that
+pkgcraft's approach inevitably leads to. Whether it will surpass pkgcore's
+efforts or fade away as an ephemeral dream remains to be seen, but hopefully
+these chronicles entertain, inform, or inspire others to support this timesink
+and strive towards their own.
+
+[^1]: Pkgcore's C extensions leveraging the CPython API worked wonders in the
+  python2 era, but slowly ossified into semi-pointless, unmaintainable kludges
+  that I dreamed about replacing and finally just nuked.
