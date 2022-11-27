@@ -26,9 +26,9 @@ library supporting language bindings.
 ### Design
 
 Interfacing rust code with another language often requires a C wrapper library
-in order to perform efficiently and/or sidestep rust's lifetime model that
-clashes with more ownership-based languages. Bindings then build on top of this
-C layer, allowing ignorance of the rust underneath.
+to perform efficiently while sidestepping rust's lifetime model that clashes
+with ownership-based languages. Bindings build on top of this C layer, allowing
+ignorance of the rust underneath.
 
 For pkgcraft, this C library is provided via
 [pkgcraft-c](https://github.com/pkgcraft/pkgcraft-c), currently wrapping
