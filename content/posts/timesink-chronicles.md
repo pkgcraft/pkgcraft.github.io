@@ -89,31 +89,31 @@ like python for the core package manager felt like a poor long-term choice. At
 the time the pkgcore fork occurred, it probably made sense due to language
 availability and communal knowledge, but that's not the case anymore.
 
-Understandably, developing in an "easier" language like python has the usual
-upsides such as portability[^1], quicker prototyping, shallower learning curve,
-larger developer pool, etc; however, it has the usual downsides as well many of
-which directly conflict with goals I've imagined such as language bindings
-support, embeddable bash, and a design supporting embarrassingly parallel
-workloads without having to resort to multiprocess pools and other types of GIL
-avoidance hacks.
+Developing in an "easier", more established language like python has the usual
+upsides such as portability[^1], fast prototyping, shallower learning curve,
+larger developer pool, etc; however, it also comes with the regular downsides
+many of which directly conflict with goals I've imagined such as language
+bindings support, embeddable bash, and a design supporting embarrassingly
+parallel workloads without having to resort to multiprocess pools and other
+types of GIL avoidance hacks.
 
 In any case, if I was going to start afresh why not waste the most time
-possible experimenting with the dreams I often used to blunt the endless dreary
-days spent unraveling python spaghetti code. At worst I could use the
-opportunity to dive deeper into a language, exploring its FFI and C support and
-how they could be used to develop bindings for other languages. In the end,
-anything I created would likely be drastically different than any previous
-project I had discovered targeting Gentoo.
+possible reaching towards dreams I used to blunt the endless dreary work spent
+untangling python spaghetti code. In the probable situation where the dreams
+fail, they will still have enhanced the opportunity to dive deeper into a
+language, explore its FFI support, and use it to develop bindings for other
+languages among other learning prospects. In the end, anything I create will
+likely be drastically different than any previous project I have found
+targeting Gentoo.
 
 ##### Enter... pkgcraft
 
 Having kicked around the idea of rewriting portions of pkgcore in rust since
 early 2017[^2], the possibility coalesced into reality as the ecosystem grew
-enough where third party libraries existed to support much of the intended,
-underlying design. For those readers thinking or mentally screaming some
-variation of "What not C?", "Real programmers use C++", or perhaps "To do this
-right you should use Zig/Nim/..." see a brief discussion of the language
-decision [in the
+enough where third party libraries existed to support much of the intended
+design. For those readers thinking some variation of "What not C?", "Real
+programmers use C++", or perhaps "To do this right you should use Zig/Nim/..."
+see a brief discussion of the language decision [in the
 FAQ](https://pkgcraft.github.io/about/#why-isnt-pkgcraft-implemented-in-c-c-python-etc-why-choose-rust).
 
 Pkgcraft's goals leave many difficult challenges ahead, e.g. merging bash's C
