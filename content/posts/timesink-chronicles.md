@@ -21,8 +21,8 @@ priority.
 
 In retrospect, the project should have capitalized more off the interest wave
 to explore other ideas before, in effect, chaining itself to bash for life.
-While I understand the upsides for selecting bash as a base, the downsides are
-quite large from a developer's perspective as bash is highly focused on two
+While I understand the advantages for selecting bash as a base, the drawbacks
+are quite large from a developer's perspective as bash is highly focused on two
 things, running scripts and interactive shell usage. Its underlying structure
 leaves a lot to be desired when trying to force it outside those bounds.
 
@@ -90,16 +90,16 @@ the time the pkgcore fork occurred, it probably made sense due to language
 availability and communal knowledge, but that's not the case anymore.
 
 Understandably, developing in an "easier" language like python has the usual
-upsides such as quicker prototyping, shallower learning curve, potentially more
-help from interested parties, etc; however, it has the usual downsides as well
-many of which directly conflict with goals I've dreamed of achieving such as
-language bindings support, embeddable bash, and a design supporting
-embarrassingly parallel workloads without having to resort to multiprocess
-pools and other types of GIL avoidance hacks.
+upsides such as portability[^1], quicker prototyping, shallower learning curve,
+larger developer pool, etc; however, it has the usual downsides as well many of
+which directly conflict with goals I've imagined such as language bindings
+support, embeddable bash, and a design supporting embarrassingly parallel
+workloads without having to resort to multiprocess pools and other types of GIL
+avoidance hacks.
 
 In any case, if I was going to start afresh why not waste the most time
-possible experimenting with the dreams I used to blunt the dullness of
-unraveling plates of python spaghetti code. At worst I figured I could use the
+possible experimenting with the dreams I often used to blunt the endless dreary
+days spent unraveling python spaghetti code. At worst I could use the
 opportunity to dive deeper into a language, exploring its FFI and C support and
 how they could be used to develop bindings for other languages. In the end,
 anything I created would likely be drastically different than any previous
@@ -108,7 +108,7 @@ project I had discovered targeting Gentoo.
 ##### Enter... pkgcraft
 
 Having kicked around the idea of rewriting portions of pkgcore in rust since
-early 2017[^1], the possibility coalesced into reality as the ecosystem grew
+early 2017[^2], the possibility coalesced into reality as the ecosystem grew
 enough where third party libraries existed to support much of the intended,
 underlying design. For those readers thinking or mentally screaming some
 variation of "What not C?", "Real programmers use C++", or perhaps "To do this
@@ -123,6 +123,7 @@ efforts or fade away as an ephemeral dream remains to be seen, but hopefully
 these chronicles entertain, inform, or inspire others to support this timesink
 and strive towards their own.
 
-[^1]: Pkgcore's C extensions leveraging the CPython API worked wonders in the
+[^1]: As long as one doesn't stray too far from the canonical CPython implementation.
+[^2]: Pkgcore's C extensions leveraging the CPython API worked wonders in the
   python2 era, but slowly ossified into semi-pointless, unmaintainable kludges
   that I dreamed about replacing and finally just nuked.
