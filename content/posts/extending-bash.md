@@ -29,7 +29,7 @@ modern is enticing, but it's fairly impossible in the short-term and thus
 disregarded. Instead, pkgcraft dives directly into the pit of insanity; it
 forks bash[^1] in an effort to achieve its goals.
 
-### Parallelism problems
+# Parallelism problems
 
 Since pkgcraft goes to the extent of forking bash, it also takes on the various
 deficiencies that hinder its use as a library. For a start, bash is not
@@ -48,7 +48,7 @@ disregarding multi-process support entirely. At some point, pkgcraft will have
 to address this and probably create its own pool or parallelized iterator
 support that reuses processes.
 
-### Error handling
+# Error handling
 
 Beyond parallelism issues, bash leverages longjmp() and frame unwinding for its
 error handling. This is understandable due to its age, chosen language, and
@@ -82,7 +82,7 @@ results on failed `source` calls while retaining the bash error message without
 having to use `set -e`, subshells, and redirection in order to achieve a
 similar effect in native bash.
 
-### Leveraging builtins
+# Leveraging builtins
 
 In terms of extensibility, bash provides support for writing builtins that can
 be called like any other command. For example, `set`, `local`, `echo`, and many

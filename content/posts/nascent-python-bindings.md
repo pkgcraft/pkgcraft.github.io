@@ -23,7 +23,7 @@ developers the choice to reuse this support without having to write their own.
 To exhibit this possibility, one of pkgcraft's goals is to act as a core
 library supporting language bindings.
 
-### Design
+# Design
 
 Interfacing rust code with another language often requires a C wrapper library
 to perform efficiently while sidestepping rust's lifetime model that clashes
@@ -79,7 +79,7 @@ type conversions and resource deallocation while calling through the C wrapper.
 It's a decent amount more work, but I think the performance benefits are worth
 it.
 
-### Development
+# Development
 
 First, the tools for building the code should be installed. This includes a
 recent rust compiler and C compiler. I leave it up to the reader to make use of
@@ -127,7 +127,7 @@ objects or caches that aren't explicitly deallocated on exit. The valgrind
 target for tox should error out if any memory leaks are detected so if it
 completes successfully no leaks were detected.
 
-### Benchmarking vs pkgcore and portage
+# Benchmarking vs pkgcore and portage
 
 Stepping away from regular development towards more interesting data, pkgcraft
 provides rough processing and memory benchmark suites in order to compare its
@@ -270,7 +270,7 @@ is a good idea for large sets of atoms with occasional overlap in order to save
 both processing time and memory usage; otherwise, both attributes suffer as
 seen from portage's uncached implementation results.
 
-### Looking to the future
+# Looking to the future
 
 From the rough benchmarks above, it seems apparent both pkgcore and portage
 could decrease their overall processing time and/or memory usage by moving to

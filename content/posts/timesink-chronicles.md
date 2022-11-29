@@ -9,7 +9,7 @@ Before beginning these grand timesink chronicles, allow me to review my
 historical use of Gentoo that helps explain this project's existence. Note that
 this narrative pertains only to my experience and opinions.
 
-##### 2005 -- Getting sucked in
+# 2005 -- Getting sucked in
 
 I first installed Gentoo around 2005, near the probable peak of outward
 interest in the project. At this point no EAPIs existed, portage was the only
@@ -26,7 +26,7 @@ are quite large from a developer's perspective as bash is highly focused on two
 things, running scripts and interactive shell usage. Its underlying structure
 leaves a lot to be desired when trying to force it outside those bounds.
 
-##### 2010 -- New package managers on the block
+# 2010 -- New package managers on the block
 
 Fast forward about 5 years to 2010 when EAPI 3 came out and two new package
 managers (pkgcore and paludis) joined portage, evolving as part of the
@@ -47,7 +47,7 @@ this time, in my opinion, Gentoo as a project should have thrown more support
 behind moving to or subsuming pkgcore because it would quickly become a
 nontrivial task in later years.
 
-##### 2015 -- Reviving a dying project
+# 2015 -- Reviving a dying project
 
 2015 was about the time I started getting involved in pkgcore-related
 development. For my part, most of my work on pkgcore and its related tools was
@@ -65,7 +65,7 @@ think the council should actively define priorities for the project and even
 use funding where appropriate to aid in that effort rather than its mainly
 reactionary and ratification style meetings.
 
-##### 2020 onwards -- Accepting fate
+# 2020 onwards -- Accepting fate
 
 By 2020, it had become clear to me that pkgcore and its related tools were
 evolutionary dead ends. I felt enough work had been done to prove their worth
@@ -106,7 +106,7 @@ languages among other learning prospects. In the end, anything I create will
 likely be drastically different than any previous project I have found
 targeting Gentoo.
 
-##### Enter... pkgcraft
+# Enter... pkgcraft
 
 Having kicked around the idea of rewriting portions of pkgcore in rust since
 early 2017[^2], the possibility coalesced into reality as the ecosystem grew

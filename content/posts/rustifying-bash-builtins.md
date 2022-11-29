@@ -26,7 +26,7 @@ For those interested in bash and rust, the following walkthrough explains how
 dynamic builtins work, describes some of the rust support required for
 interoperability, and discusses why they're useful.
 
-## Dynamic builtin basics
+# Dynamic builtin basics
 
 For background, bash includes builtins used daily by many, e.g. `cd`, `echo`,
 and `source` are all builtins. In addition to these, external builtins can be
@@ -70,7 +70,7 @@ other words, scoped builtins that form more complex expressions, e.g. bash's
 conditional expression `[[ ]]`, generally require parser and/or grammar level
 changes that aren't possible to achieve in a basic builtin.
 
-## Creating builtins in rust
+# Creating builtins in rust
 
 One of the tricky parts supporting dynamic builtins in rust is that it has no
 support of life before main or lib init similar to C. Therefore, we must
@@ -94,7 +94,7 @@ example project to create dynamic builtins. For our purposes, we'll be
 exploring scallop and pkgcraft-bash while using them to demonstrate how
 rust-based builtins work.
 
-#### Development environment
+## Development environment
 
 First, the required tools for building the code should be installed. This
 includes a recent rust compiler, C compiler, and a recent version of bash that
@@ -121,7 +121,7 @@ $ cargo build -p pkgcraft-bash --features pkgcraft
 This should create the shared pkgcraft-bash library
 `target/debug/libpkgcraft_bash.so` from which dynamic builtins can be loaded.
 
-### Profiling
+## Profiling
 
 In order to aid in bash development with rust, scallop provides a rudimentary
 profiling builtin. To load and use it, see the following example:
@@ -148,7 +148,7 @@ code required to support operating with ebuilds to be replaced with rust.
 Alongside that, this profile builtin helps highlight certain types of runtime
 regressions in pkgcraft's builtin support.
 
-### Atom version comparisons
+## Atom version comparisons
 
 Now that you have some experience with the `profile` builtin, let's compare the
 performance of an actual rust-based builtin to similar functionality written
@@ -287,7 +287,7 @@ binary search in its builtins array to find if a matching builtin exists before
 executing it. This should be quicker to perform as a simple hash table lookup
 instead.
 
-## Rust or bash, your call
+# Rust or bash, your call
 
 Overall, I personally find most programming languages to be more maintainable
 than bash in the long-term for any well-written code longer than relatively
