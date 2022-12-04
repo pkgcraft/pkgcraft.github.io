@@ -59,11 +59,32 @@ Choosing Rust was a pragmatic decision using the following requirements:
 4. able to work with and create efficient, C compatible libraries
 5. relatively large, native library ecosystem
 
-Narrowing the field with those priorities, the main candidates were Rust and Go
-with other stragglers failing for various reasons such as Nim and Zig. From
-those two options, Go is too restrictive for pkgcraft's envisioned design and
-doesn't achieve the same level of C support allowed by Rust. On the other hand,
-the main detriments of Rust in relation to pkgcraft's aspirations are its
+Narrowing the field with those priorities, Rust is the only candidate that
+fulfills them all. Listing some of the alternatives and why they were rejected:
+
+- C --- Lacks any memory safety guarantees and requires far too much work to do
+  high level coding without leveraging all sorts of libraries. However, it is
+  decent as a glue layer used to provide language bindings as its the lingua
+  franca of software.
+
+- C++ --- Like C, it also lacks memory safety guarantees without strict limits
+  and guidelines for a project. In addition, while its community has done a
+  decent job at improving the language over the years (compared to the likes of
+  C) the language has a large tail of accumulated baggage.
+
+- Go --- While good for writing services and tools, it doesn't come close to
+  matching Rust's level of C compatibility and low level support in general.
+
+- Nim/Zig --- Both of these are interesting as C or C++ replacements, but they
+  lack the community depth that Rust currently has and thus have smaller third
+  party ecosystems.
+
+- Python/Ruby/etc --- Any dynamically typed, scripting languages fail to easily
+  support efficient bindings for other languages and aren't performant enough
+  in certain cases, requiring to implement extensions in external, compiled
+  languages anyway.
+
+The main detriments of Rust in relation to pkgcraft's aspirations are its
 current lack of minor architecture support (compared to C and C++) and its
 steep learning curve, neither of which precludes pkgcraft from reaching its
 goals.
@@ -79,8 +100,8 @@ Or stated another way, nearly all major development for package managers
 targeting Gentoo has been done by singular teams regardless of implementation
 language. Those "teams" have changed over time, but rarely are there multiple
 developers doing large, sustained amounts of work on the same project. In
-short, my response to the steep learning curve is that pkgcraft aims to provide
-bindings for "easier" languages that may be used to avoid rust-based
+short, pkgcraft's response to the steep learning curve is that it aims to
+provide bindings for "easier" languages that may be used to avoid rust-based
 development.
 
 # Project goals
