@@ -60,7 +60,8 @@ Choosing Rust was a pragmatic decision using the following requirements:
 5. relatively large, native library ecosystem
 
 Narrowing the field with those priorities, Rust is the only candidate that
-fulfills them all. Listing some of the alternatives and why they were rejected:
+fulfills them all. For more background info, the following list includes
+considered alternatives along with some of the reasons why they were rejected:
 
 - C --- Lacks any memory safety guarantees and requires far too much work to do
   high level coding without leveraging all sorts of libraries. However, it is
