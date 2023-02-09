@@ -65,7 +65,7 @@ considered alternatives along with some of the reasons why they were rejected:
 
 - C --- Lacks any memory safety guarantees and requires far too much work to do
   high level coding without leveraging all sorts of libraries. However, it is
-  decent as a glue layer used to provide language bindings as its the lingua
+  decent as a glue layer used to provide language bindings as it's the lingua
   franca of software.
 
 - C++ --- Like C, it also lacks memory safety guarantees without strict limits
