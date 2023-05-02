@@ -49,6 +49,26 @@ both as a replacement for [catalyst](https://wiki.gentoo.org/wiki/Catalyst) and
 as a tinderbox while also enabling more exotic features such as allowing the
 dep tree for a running build to be mangled and recalculated on the fly.
 
+## Why can't this project be merged with pkgcore (or paludis)?
+
+As explained in the previous answers, pkgcraft aims to take an entirely
+different approach than previous projects. With respect to pkgcore, since it
+grew as a direct offshoot of portage it copied much of portage's decisions,
+albeit in a more optimized and API-friendly fashion. It has successfully shown
+what a better designed portage experience could be like, but it's also entirely
+locked into the Python ecosystem and all that entails. On the other hand,
+paludis comes quite a bit closer to pkgcraft's vision as it supports several
+language bindings; however, it has lagged behind newer EAPI support and doesn't
+allow for nearly as much experimentation as pkgcraft.
+
+While it's hard to directly merge development efforts, in general pkgcraft will
+try to adhere to specifications and defined formats allowing cooperation with
+respect to creating and maintaining them. This should allow other tools to
+build on top of pkgcraft implementations if they wish. Unfortunately, most of
+what makes package managers work beyond direct interactions with ebuilds is
+entirely unspecified so pkgcraft won't be able to be interchangeably used when
+it begins supporting its own package manager.
+
 ## Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
 Choosing Rust was a pragmatic decision using the following requirements:
