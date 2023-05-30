@@ -7,7 +7,7 @@ tags: ["bash"]
 
 Bash is slow. Supporting a nested inheritance structure on top of bash makes it
 even slower. Without metadata caches, processing ebuilds would be
-extraordinarily more painful than it already is[^1]. Imagine the extra time it
+extraordinarily more painful than it already is. Imagine the extra time it
 would take to source all the ebuilds required to run a command such as `emerge
 -e world` before dependency resolution can begin. Clearly the importance of
 using a cache when dealing with a large corpus of highly nested bash code
@@ -209,10 +209,8 @@ sourced and dump a specific variable from the sourced environment. This kind of
 tooling should give developers more insight into the metadata generation
 process and how different types of coding structures affect it.
 
-[^1]: One can experience this by running any repo encompassing command on top
-    of a raw git ebuild repo or by blowing away metadata/md5-cache.
-[^2]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
-[^3]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
+[^1]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
+[^2]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
     restricted mode while bash does not.
-[^4]: Bash intertwines global state everywhere throughout its parser and
+[^3]: Bash intertwines global state everywhere throughout its parser and
     execution pipeline.
