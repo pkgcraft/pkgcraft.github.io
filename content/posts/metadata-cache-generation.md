@@ -66,7 +66,7 @@ To use pkgcraft's implementation, run commands such as the following:
 Note that the repo argument must be specified and either be the name of a
 configured ebuild repo on the system or an external repo pointed to via a path.
 Specifying the level of parallelism is supported using the `-j/--jobs` option
-which will default to using all available CPU cores when unspecified.
+which defaults to the system's number of logical CPU cores when unset.
 
 # Implementation details
 
@@ -158,8 +158,11 @@ using pkgcore and pkgcraft that is then used with portage.
 There are potentially a few optimizations that might shave more time off a full
 tree regen run. On the bash side, every time a builtin may be called a binary
 search is run across the registered builtins to determine if one exists.
-Replacing those lookups with hash table queries probably could speed up the
-execution pipeline for bash code using large amounts of commands.
+Replacing those lookups with hash table queries could potentially speed up the
+execution pipeline for bash code using large amounts of commands if the hash
+function used[^fnv] runs in less time than a binary search. Including
+pkgcraft's builtins, a worst case binary search takes approximately seven steps
+so this work may not be worth it.
 
 In addition, initial work has been done to allow bash processes to reset their
 internal state in order to allow reuse rather than leveraging subshells
@@ -211,7 +214,10 @@ tooling should give developers more insight into the metadata generation
 process and how different types of coding structures affect it.
 
 [^post]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
-[^rbash]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
-    restricted mode while bash does not.
+[^rbash]: Pkgcraft's bundled version allows redirections to /dev/null in
+    restricted mode while vanilla bash does not.
+[^fnv]: Bash uses
+    [FNV-1](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function)
+    for hash table support.
 [^globals]: Bash intertwines global state everywhere throughout its parser and
     execution pipeline.
