@@ -120,9 +120,11 @@ metadata` using 1-2 jobs. Due to this, my blunt advice is to avoid using
 portage for metadata generation if performance is important to you, especially
 on slower hardware.
 
-On the other hand, pkgcore performs relatively well due to leveraging a bash
-daemon while using subshells (forked processes) to generate metadata thus
-avoiding most of the unnecessary process overhead done by portage.
+In constrast, pkgcore performs relatively well due to leveraging a bash daemon
+that spawns subshells (forked processes) to generate metadata thus avoiding
+most of the unnecessary process overhead. This approach could be copied into
+portage to provide the same benefits, but that would require extensive rework
+of the bash functionality and IPC interface.
 
 Pkgcraft is the fastest by a significant margin while still doing the most
 verification work of the three; however, it has the advantage that none of the
