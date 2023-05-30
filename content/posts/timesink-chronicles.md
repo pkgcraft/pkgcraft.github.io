@@ -90,7 +90,7 @@ the time the pkgcore fork occurred, it probably made sense due to language
 availability and communal knowledge, but that's not the case anymore.
 
 Developing in an "easier", more established language like python has the usual
-upsides such as portability[^1], fast prototyping, shallower learning curve,
+upsides such as portability[^cpython], fast prototyping, shallower learning curve,
 larger developer pool, etc; however, it also comes with the regular downsides
 many of which directly conflict with goals I've imagined such as language
 bindings support, embeddable bash, and a design supporting embarrassingly
@@ -109,7 +109,7 @@ targeting Gentoo.
 # Enter... pkgcraft
 
 Having kicked around the idea of rewriting portions of pkgcore in rust since
-early 2017[^2], the possibility coalesced into reality as the ecosystem grew
+early 2017[^cexts], the possibility coalesced into reality as the ecosystem grew
 enough where third party libraries existed to support much of the intended
 design. For those readers thinking some variation of "What not C?", "Real
 programmers use C++", or perhaps "To do this right you should use Zig/Nim/..."
@@ -123,7 +123,7 @@ efforts or fade away as an ephemeral dream remains to be seen, but hopefully
 these chronicles entertain, inform, or inspire others to support this timesink
 and strive towards their own.
 
-[^1]: As long as one doesn't stray too far from the canonical CPython implementation.
-[^2]: Pkgcore's C extensions leveraging the CPython API worked wonders in the
+[^cpython]: As long as one doesn't stray too far from the canonical CPython implementation.
+[^cexts]: Pkgcore's C extensions leveraging the CPython API worked wonders in the
   python2 era, but slowly ossified into semi-pointless, unmaintainable kludges
   that I dreamed about replacing and finally just nuked.

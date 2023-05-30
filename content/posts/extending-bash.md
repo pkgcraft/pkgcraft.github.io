@@ -27,7 +27,7 @@ Pkgcraft aims to move beyond daemon functionality and achieve better lower
 level integration. The dream of replacing bash with something threadable and
 modern is enticing, but it's fairly impossible in the short-term and thus
 disregarded. Instead, pkgcraft dives directly into the pit of insanity; it
-forks bash[^1] in an effort to achieve its goals.
+forks bash[^bash] in an effort to achieve its goals.
 
 # Parallelism problems
 
@@ -56,7 +56,7 @@ minimal dependencies, but doesn't lend itself well to interoperability with
 rust. For pkgcraft, bash is wrapped where its C code is called from the rust
 library and then it can call back into rust support exported to C. The issue
 with that is unwinding across rust-based frames from C is undefined behavior.
-Hopefully at some point the "C-unwind" ABI[^2] and other related FFI work in
+Hopefully at some point the "C-unwind" ABI[^unwind] and other related FFI work in
 rust is stabilized potentially helping solve the issue in a better fashion.
 
 With respect to longjmp() usage, in order to avoid null jump buffers the forked
@@ -100,5 +100,5 @@ within closures to access and modify build data as required. While somewhat
 ugly, this does allow avoiding the even uglier bash variable hacks used by
 pkgcore.
 
-[^1]: Pkgcraft's bash fork is available at https://github.com/pkgcraft/bash.
-[^2]: https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html
+[^bash]: Pkgcraft's bash fork is available at https://github.com/pkgcraft/bash.
+[^unwind]: https://rust-lang.github.io/rfcs/2945-c-unwind-abi.html

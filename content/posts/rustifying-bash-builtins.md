@@ -12,7 +12,7 @@ support using builtins.
 
 For example, the `inherit` command used to load eclasses, `die`, and all
 install-related functionality (e.g. `doins`) are all implemented as
-builtins[^1]. This allows for a more seamless experience compared to pkgcore
+builtins[^builtins]. This allows for a more seamless experience compared to pkgcore
 which implements all of this natively in bash using a simple daemon that sends
 messages via shared fds to communicate between the python and bash sides.
 
@@ -79,7 +79,7 @@ be initialized globally before init. To do this rust relies on linker support
 for runtime initialization via `DT_INIT_ARRAY` for ELF objects (and similar on
 other platforms). This allows running a specified function during the
 library loading process that replaces Option wrapped, globally defined,
-static mutables with their actual builtin structs required by bash[^2].
+static mutables with their actual builtin structs required by bash[^ctor].
 
 Beyond building the shared objects, pkgcraft provides support for interacting
 with bash's C API in rust via [scallop](https://github.com/pkgcraft/scallop).
@@ -304,6 +304,6 @@ another language, for example allowing python to natively interact with bash.
 For the time being, I'll just continue using it for one of the main reasons I
 created it: trying to avoid writing extensive code in bash.
 
-[^1]: They can currently be found in the `pkgsh/builtins` subdirectory of the
+[^builtins]: They can currently be found in the `pkgsh/builtins` subdirectory of the
   [pkgcraft crate](https://github.com/pkgcraft/pkgcraft/tree/main/src/pkgsh/builtins).
-[^2]: The [ctor crate](https://crates.io/crates/ctor) can make this easier via procedural macros.
+[^ctor]: The [ctor crate](https://crates.io/crates/ctor) can make this easier via procedural macros.
