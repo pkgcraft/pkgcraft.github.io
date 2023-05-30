@@ -83,10 +83,11 @@ serialization -- is done in a forked process pool iterator. How it currently
 works is raw, unsourced packages are iterated over, forking a new process for
 each in a pool limited to a specific size using a bounded semaphore stored in
 shared memory. Inside the forked process, the metadata workflow occurs from
-with the result is encoded and sent back to the main process using IPC channels
-that also work on top of shared memory[^ipc-channel]. The main process unwraps
-the result, outputs the error if one occurred to stderr, and tracks the overall
-regeneration status during the process.
+with the result is encoded and sent back to the main process using
+inter-process communication (IPC) channels that also work on top of shared
+memory[^ipc-channel]. The main process unwraps the result, outputs the error if
+one occurred to stderr, and tracks the overall regeneration status during the
+process.
 
 For security purposes (and also because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
@@ -123,9 +124,10 @@ avoiding most of the unnecessary process overhead done by portage.
 
 Pkgcraft is the fastest by a significant margin while still doing the most
 verification work of the three; however, it has the advantage that none of the
-underlying bash support is natively written in bash and also currently limits
+underlying metadata support is natively written in bash and currently limits
 IPC overhead to the relatively minimal encoding of results, relying on the
-operating system's copy-on-write support for forked process pages.
+operating system's copy-on-write support for forked process memory pages to
+"transfer" data into each process.
 
 # Package manager compatibility
 
@@ -163,10 +165,10 @@ In addition, initial work has been done to allow bash processes to reset their
 internal state in order to allow reuse rather than leveraging subshells
 internally or forked processes externally. The idea being that instead of
 forking a new process per ebuild, a process pool could reuse its processes by
-resetting their state thus saving time by avoiding the underlying OS's fork()
-setup time. However, this capability might not come to fruition as its
-difficult to make bash properly reset its state[^globals] after errors or signals
-occur that cause nonlocal gotos via longjmp().
+resetting their state thus saving time by avoiding the underlying operating
+system's fork() setup time. However, this capability might not come to fruition
+as its difficult to make bash properly reset its state[^globals] after errors
+or signals occur that cause nonlocal gotos via longjmp().
 
 As mentioned previously, pkgcraft currently parallelizes this process using a
 simplistic forked process pool that runs the entire workflow inside it.
