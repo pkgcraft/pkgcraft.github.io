@@ -78,7 +78,7 @@ pkgcraft to handle tracking metadata using its own internal build state,
 avoiding mangling bash variables over nested inherits where possible.
 
 Parallelism is handled in a simplistic fashion in that the entire workflow --
-validity checks, sourcing and metadata structure creation, and file
+validity checks, ebuild sourcing, metadata structure creation, and file
 serialization -- is done in a forked process pool iterator. How it currently
 works is raw, unsourced packages are iterated over forking a new process for
 each package in a pool limited to a specific size. Inside the forked process,
