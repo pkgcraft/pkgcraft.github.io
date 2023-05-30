@@ -91,6 +91,16 @@ to the main process using rust channels that work on top of shared memory. The
 main process unwraps the results, outputs any errors it finds, and tracks the
 overall regeneration status during the process.
 
+For security purposes (and also because sandboxing isn't supported yet), ebuild
+sourcing is run within a restricted shell environment. This rejects a lot of
+functionality usually possible in a regular bash shell including not allowing
+external commands to be run. To see the entire list (with minor
+differences[^3]), run `man rbash`. In addition, sourcing functionality is
+configured to act similar to `set -e` being enabled meaning any command failing
+in global scope will cause a package to fail sourcing. Overall, the stricter
+environment has highlighted a lot of the more questionable bash usage in the
+tree such as using `return 0` or declaring local variables in global scope.
+
 # Benchmarks and performance
 
 Rough benchmarks comparing the metadata generation implementations of portage,
@@ -129,6 +139,16 @@ possible since many of the underlying data structures are ordered sets. It also
 appears to using slightly different eclass inheritance ordering for the related
 field in cases where there are circular inherits.
 
+Beyond file serialization, pkgcraft is also stricter in what it allows in
+global scope whether in ebuilds or eclasses due to its bash configuration as
+mentioned previously. This currently causes a decent amount of ebuilds to fail
+when generating metadata due to command failures in eclass global scope. It is
+unlikely portage or pkgcore will ever be able to catch the same level of issues
+since they run their metadata generation natively in function scope which hides
+many of the issues that can only be seen when running in global scope. One way
+to catch them would be to leverage an external bash parser to point them out
+during `pkgcheck` runs.
+
 Even with these differences, it should be noted that all package managers
 should be able to use the others generated cache output if they adhere to the
 specified format. This means it's possible to generate metadata more quickly
@@ -148,7 +168,7 @@ internally or forked processes externally. The idea being that instead of
 forking a new process per ebuild, a process pool could reuse its processes by
 resetting their state thus saving time by avoiding the underlying OS's fork()
 setup time. However, this capability might not come to fruition as its
-difficult to make bash properly reset its state[^3] after errors or signals
+difficult to make bash properly reset its state[^4] after errors or signals
 occur that cause nonlocal gotos via longjmp().
 
 As mentioned previously, pkgcraft currently parallelizes this process using a
@@ -194,5 +214,7 @@ process and how different types of coding structures affect it.
 [^1]: One can experience this by running any repo encompassing command on top
     of a raw git ebuild repo or by blowing away metadata/md5-cache.
 [^2]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
-[^3]: Bash intertwines global state everywhere throughout its parser and
+[^3]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
+    restricted mode while bash does not.
+[^4]: Bash intertwines global state everywhere throughout its parser and
     execution pipeline.
