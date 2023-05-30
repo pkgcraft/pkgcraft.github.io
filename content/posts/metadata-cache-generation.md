@@ -71,7 +71,7 @@ which will default to using all available CPU cores when unspecified.
 # Implementation details
 
 In a technical sense, pkgcraft tries to avoid bash as much as possible. As
-written about in a previous post[^2], all commands and functionality specified
+written about in a previous post[^post], all commands and functionality specified
 by PMS are implemented as builtins natively in rust that are then given C
 compatible wrappers and injected into a bundled version of bash. This allows
 pkgcraft to handle tracking metadata using its own internal build state,
@@ -93,7 +93,7 @@ For security purposes (and also because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
 functionality usually possible in a regular bash shell including not allowing
 external commands to be run. To see the entire list (with minor
-differences[^3]), run `man rbash`. In addition, sourcing functionality is
+differences[^rbash]), run `man rbash`. In addition, sourcing functionality is
 configured to act similar to `set -e` being enabled meaning any command failing
 in global scope will cause a package to fail sourcing. Overall, the stricter
 environment has highlighted a lot of the more questionable bash usage in the
@@ -166,7 +166,7 @@ internally or forked processes externally. The idea being that instead of
 forking a new process per ebuild, a process pool could reuse its processes by
 resetting their state thus saving time by avoiding the underlying OS's fork()
 setup time. However, this capability might not come to fruition as its
-difficult to make bash properly reset its state[^4] after errors or signals
+difficult to make bash properly reset its state[^globals] after errors or signals
 occur that cause nonlocal gotos via longjmp().
 
 As mentioned previously, pkgcraft currently parallelizes this process using a
@@ -209,8 +209,8 @@ sourced and dump a specific variable from the sourced environment. This kind of
 tooling should give developers more insight into the metadata generation
 process and how different types of coding structures affect it.
 
-[^1]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
-[^2]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
+[^post]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
+[^rbash]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
     restricted mode while bash does not.
-[^3]: Bash intertwines global state everywhere throughout its parser and
+[^globals]: Bash intertwines global state everywhere throughout its parser and
     execution pipeline.
