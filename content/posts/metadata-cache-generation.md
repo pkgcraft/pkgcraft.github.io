@@ -80,14 +80,13 @@ avoiding mangling bash variables over nested inherits where possible.
 Parallelism is handled in a simplistic fashion in that the entire workflow --
 validity checks, ebuild sourcing, metadata structure creation, and file
 serialization -- is done in a forked process pool iterator. How it currently
-works is raw, unsourced packages are iterated over forking a new process for
-each package in a pool limited to a specific size. Inside the forked process,
-the metadata workflow occurs, first checking for metadata file existence and
-validity, then sourcing and generation, and lastly file serialization. Any
-result, including errors or successful completions, are encoded and sent back
-to the main process using rust channels that work on top of shared memory. The
-main process unwraps the results, outputs any errors it finds, and tracks the
-overall regeneration status during the process.
+works is raw, unsourced packages are iterated over, forking a new process for
+each in a pool limited to a specific size using a bounded semaphore stored in
+shared memory. Inside the forked process, the metadata workflow occurs from
+with the result is encoded and sent back to the main process using IPC channels
+that also work on top of shared memory[^ipc-channel]. The main process unwraps
+the result, outputs the error if one occurred to stderr, and tracks the overall
+regeneration status during the process.
 
 For security purposes (and also because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
@@ -210,6 +209,7 @@ tooling should give developers more insight into the metadata generation
 process and how different types of coding structures affect it.
 
 [^post]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
+[^ipc-channel]: https://crates.io/crates/ipc-channel
 [^rbash]: Pkgcraft's bundled version of bash allows redirections to /dev/null in
     restricted mode while bash does not.
 [^globals]: Bash intertwines global state everywhere throughout its parser and
