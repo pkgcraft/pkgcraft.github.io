@@ -91,13 +91,13 @@ process.
 
 For security purposes (and also because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
-functionality usually possible in a regular bash shell including not allowing
-external commands to be run. To see the entire list (with minor
-differences[^rbash]), run `man rbash`. In addition, sourcing functionality is
-configured to act similar to `set -e` being enabled meaning any command failing
-in global scope will cause a package to fail sourcing. Overall, the stricter
-environment has highlighted a lot of the more questionable bash usage in the
-tree such as using `return 0` or declaring local variables in global scope.
+functionality possible in regular bash including running external commands. To
+see the entire list (with minor differences[^rbash]), run `man rbash`. In
+addition, sourcing functionality is configured to act similar to `set -e` being
+enabled causing package sourcing to error out if any command fails. Overall,
+the stricter environment has highlighted many instances of questionable bash
+usage in the tree such as using `return 0` or declaring local variables in
+global scope.
 
 # Benchmarks and performance
 
