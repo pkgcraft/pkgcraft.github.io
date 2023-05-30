@@ -29,10 +29,10 @@ using globally-scoped package metadata speeding up the process immensely.
 # Package manager support
 
 Those doing ebuild and/or eclass development should either be familiar with
-portage's `egencache` (or `emerge --regen`) or pkgcore's `pmaint regen`
-commands. Both provide metadata cache generation functionality for their
-respective ecosystem and are generally required when running on ebuild repos
-from git lacking bundled, pre-generated metadata.
+portage's `egencache` (`emerge --regen`) or pkgcore's `pmaint regen` commands.
+Both provide metadata cache generation functionality for their respective
+ecosystem and are generally required when running on ebuild repos from git
+lacking bundled, pre-generated metadata.
 
 Different implementations do varying amounts of verification and processing
 during metadata generation with both portage and pkgcore mainly treating the
