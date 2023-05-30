@@ -71,11 +71,13 @@ which defaults to the system's number of logical CPU cores when unset.
 # Implementation details
 
 In a technical sense, pkgcraft tries to avoid bash as much as possible. As
-written about in a previous post[^post], all commands and functionality specified
-by PMS are implemented as builtins natively in rust that are then given C
-compatible wrappers and injected into a bundled version of bash. This allows
-pkgcraft to handle tracking metadata using its own internal build state,
-avoiding mangling bash variables over nested inherits where possible.
+described in the previous post on [rustifying
+bash](https://pkgcraft.github.io/posts/rustifying-bash-builtins/), all commands
+and functionality specified by PMS are implemented as builtins natively in rust
+that are then given C compatible wrappers and injected into a bundled version
+of bash. This allows pkgcraft to handle tracking metadata using its own
+internal build state, avoiding mangling bash variables over nested inherits
+where possible.
 
 Parallelism is handled in a simplistic fashion in that the entire workflow --
 validity checks, ebuild sourcing, metadata structure creation, and file
@@ -213,7 +215,6 @@ sourced and dump a specific variable from the sourced environment. This kind of
 tooling should give developers more insight into the metadata generation
 process and how different types of coding structures affect it.
 
-[^post]: https://pkgcraft.github.io/posts/rustifying-bash-builtins/
 [^rbash]: Pkgcraft's bundled version allows redirections to /dev/null in
     restricted mode while vanilla bash does not.
 [^fnv]: Bash uses
