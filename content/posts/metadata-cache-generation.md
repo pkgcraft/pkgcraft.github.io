@@ -110,13 +110,13 @@ SSD are as follows:
 - pkgcore: `pmaint regen -t 16` -- approximately 1 minute, 45 seconds
 - pkgcraft: `pk repo metadata -j16` -- approximately 1 minute
 
-From these results, it's clear that portage's main weakness of entirely
-respawning bash causes it to lag far behind the other two. The process spawning
-overhead is so dominant that running egencache using 16 jobs is roughly
-equivalent to running `pmaint regen` using 2-3 jobs or `pk repo metadata` using
-1-2 jobs. Due to this, my blunt advice is to avoid using egencache if full repo
-metadata generation performance is important to you, especially when running on
-older or slower hardware.
+From these results, it's clear that one of portage's main weaknesses of
+entirely respawning bash causes it to lag far behind the other two. The process
+spawning overhead is so dominant that running `egencache` using 16 jobs is
+roughly equivalent to running `pmaint regen` using 2-3 jobs or `pk repo
+metadata` using 1-2 jobs. Due to this, my blunt advice is to avoid using
+portage for metadata generation if performance is important to you, especially
+on slower hardware.
 
 On the other hand, pkgcore performs relatively well due to leveraging a bash
 daemon while using subshells (forked processes) to generate metadata thus
