@@ -6,7 +6,7 @@ tags: ["bash"]
 ---
 
 Bash is slow. Supporting a nested inheritance structure on top of bash makes it
-even slower. Without metadata caches processing ebuilds would be
+even slower. Without metadata caches, processing ebuilds would be
 extraordinarily more painful than it already is[^1]. Imagine the extra time it
 would take to source all the ebuilds required to run a command such as `emerge
 -e world` before dependency resolution can begin. Clearly the importance of
@@ -37,19 +37,17 @@ pre-generated metadata.
 Different implementations do varying amounts of verification and processing
 during metadata generation with both portage and pkgcore mainly treating the
 data as raw strings performing little verification, instead farming that task
-out to tools such as `pkgcheck`. Performing this verification requires parsing
-the metadata strings into their related data structures which can extend
-generation time too much when using parsing code written in slower languages.
-In general, this is resolved by developers running tooling like pkgcheck on
-their local system that performs the data verification before commits are
-pushed to the public repo.
+out to tools such as `pkgcheck`. Verification requires parsing the metadata
+strings into their related data structures which can extend generation time too
+much when using parsing routines written in slower languages. In general, this
+is resolved by developers running tooling like pkgcheck on their local system
+that verifies the data before commits are pushed to the public repo.
 
 On the other side, pkgcraft currently tries to verify as much as possible
-during metadata generation. In general this means any verification only
-requiring localized knowledge will be performed, but anything requiring
-repo-wide info such as dependency visibility is not. For example, all
-dependency fields are parsed into their related data structures, catching any
-invalid formatting.
+during metadata generation. In general this means any verification requiring
+only localized knowledge will be performed, but anything requiring repo-wide
+info such as dependency visibility is not. For example, all dependency fields
+are parsed into their related data structures, catching any invalid formatting.
 
 # Pkgcraft tooling
 
