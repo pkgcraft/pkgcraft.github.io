@@ -406,12 +406,12 @@ uglyURLs = false
     ######################################
     # List Page
 
-    listWidth = 36
+    listWidth = 42
     # Note: you can leave it empty("") to
     #       fallback to the default value: 42
     #       Unit: em
 
-    displayListTitle = true
+    displayListTitle = false
 
     listDateFormat = "January 2"
     # ATTENTION: be sure to follow the
@@ -422,10 +422,10 @@ uglyURLs = false
     # Note: left or right
 
     # Separate the list by month?
-    groupByMonth = true
+    groupByMonth = false
 
     # Enable Chinese zodiac?
-    chineseZodiac = true
+    chineseZodiac = false
 
     # Translate the year? (valid for title)
     i18nYear = false
