@@ -14,11 +14,11 @@ using a cache when dealing with a large corpus of highly nested bash code
 cannot be understated.
 
 For ebuild repos, the metadata cache is currently located at metadata/md5-cache
-from the repo root and is populated by sourcing each ebuild with all its eclass
+from the repo root and is created by sourcing each ebuild with all its eclass
 dependencies, tracking state over nested inherits for incrementally handled
 variables, and then writing the relevant metadata key/value mapping to the
-cache. A cache is updated by iterating over its entries and either comparing
-file timestamps or using embedded checksums to see if an entry is outdated.
+cache. An existing cache is updated by iterating over its entries, comparing
+checksums to determine validity, and performing entry creation on failure.
 
 While loading package information for dependency resolution or any other
 tree-wide activity, the cache is first accessed to determine if it has the
