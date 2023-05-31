@@ -130,10 +130,10 @@ most of the unnecessary process overhead. This approach could be copied into
 portage to provide the same benefits, but that would require extensive rework
 of the bash functionality and IPC interface.
 
-Pkgcraft is the fastest by a significant margin while still doing the most
-verification work of the three; however, it has the advantage that none of the
-underlying metadata support is natively written in bash and currently limits
-IPC overhead to the relatively minimal encoding of results, relying on the
+Pkgcraft is the fastest by a significant margin while also doing the most
+verification of the three; however, it has the advantage that none of the
+underlying support is natively written in bash and currently limits IPC
+overhead to the relatively minimal encoding of results, relying on the
 operating system's copy-on-write support for forked process memory pages to
 "transfer" data into each process.
 
