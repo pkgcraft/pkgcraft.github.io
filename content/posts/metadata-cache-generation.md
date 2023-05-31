@@ -108,9 +108,9 @@ pkgcore, and pkgcraft on a modest laptop with 8 cores/16 threads (AMD Ryzen 7
 5700U) running against a semi-current gentoo tree with no metadata on top of an
 SSD are as follows:
 
-- portage: `egencache -j16` -- approximately 5 minutes
-- pkgcore: `pmaint regen -t 16` -- approximately 1 minute, 45 seconds
-- pkgcraft: `pk repo metadata -j16` -- approximately 1 minute
+- portage: `egencache -j16` -- approximately 5m
+- pkgcore: `pmaint regen -t 16` -- approximately 1m45s
+- pkgcraft: `pk repo metadata -j16` -- approximately 55s
 
 From these results, it's clear that one of portage's main weaknesses of
 entirely respawning bash causes it to lag far behind the other two. The process
