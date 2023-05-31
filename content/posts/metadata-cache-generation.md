@@ -28,26 +28,24 @@ using globally-scoped package metadata speeding up the process immensely.
 
 # Package manager support
 
-Those doing ebuild and/or eclass development should either be familiar with
-portage's `egencache` (`emerge --regen`) or pkgcore's `pmaint regen` commands.
-Both provide metadata cache generation functionality for their respective
-ecosystem and are generally required when running on ebuild repos from git
-lacking bundled, pre-generated metadata.
+Those doing ebuild development should be familiar with either portage's
+`egencache` (`emerge --regen`) or pkgcore's `pmaint regen` commands. Both
+provide metadata cache generation functionality for their respective ecosystem
+and are generally required when running on ebuild repos lacking bundled,
+pre-generated metadata.
 
-Different implementations do varying amounts of verification and processing
-during metadata generation with both portage and pkgcore mainly treating the
-data as raw strings performing little verification, instead farming that task
-out to tools such as `pkgcheck`. Verification requires parsing the metadata
-strings into their related data structures which can extend generation time too
-much when using parsing routines written in slower languages. In general, this
-is resolved by developers running tooling like pkgcheck on their local system
-that verifies the data before commits are pushed to the public repo.
+Metadata generation implementations handle verification differently with both
+portage and pkgcore treating the data as raw strings performing few validity
+checks. Verification requires parsing metadata strings into relevant data
+structures significantly extending generation time when written in slower
+languages. This is resolved using development tools such as pkgcheck that
+verifies ebuild metadata before pushing commits.
 
-On the other side, pkgcraft currently tries to verify as much as possible
-during metadata generation. In general this means any verification requiring
-only localized knowledge will be performed, but anything requiring repo-wide
-info such as dependency visibility is not. For example, all dependency fields
-are parsed into their related data structures, catching any invalid formatting.
+Conversely, pkgcraft tries to confirm metadata validity as much as possible.
+Most verification using localized knowledge is performed, but anything
+requiring repo-wide info such as dependency visibility is not. For example, all
+dependency fields are parsed into their related data structures, catching any
+invalid formatting.
 
 # Pkgcraft tooling
 
