@@ -181,13 +181,13 @@ system's fork() setup time. However, this capability might not come to fruition
 as its difficult to make bash properly reset its state[^globals] after errors
 or signals occur that cause nonlocal gotos via longjmp().
 
-As mentioned previously, pkgcraft currently parallelizes this process using a
-simplistic forked process pool that runs the entire workflow inside it.
-Technically, only the sourcing and structure creation should required to run in
-a separate process so it could potentially be faster to use parallelized thread
-pools for validity and file serialization. However, I imagine the dominant
-runtime factor is bash sourcing so this shouldn't be significant for full regen
-runs, but could speed up fully up-to-date repo verifications.
+As mentioned previously, pkgcraft currently parallelizes metadata generation
+with a simplistic pool iterator using a forked process per package.
+Technically, only sourcing is required to run in a separate process so it may
+be faster to use thread pools for validity, structure creation, and file
+serialization. However, the dominant runtime factor for full regen runs is bash
+sourcing so this shouldn't be significant, but could speed up repo
+verification.
 
 # Future metadata-related work
 
