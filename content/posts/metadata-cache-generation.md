@@ -125,35 +125,33 @@ portage to provide the same benefits, but that would require extensive rework
 of the bash functionality and IPC interface.
 
 Pkgcraft is the fastest by a significant margin while also doing the most
-verification of the three; however, it has the advantage that none of the
-underlying support is natively written in bash and currently limits IPC
-overhead to the relatively minimal encoding of results, relying on the
-operating system's copy-on-write support for forked process memory pages to
-"transfer" data into each process.
+verification of the three; however, it has the advantage that the underlying
+support isn't written in bash and currently limits IPC overhead to the
+relatively minimal encoding of results, relying on the operating system's
+copy-on-write support for forked memory pages to "transfer" data into each
+process.
 
 # Package manager compatibility
 
-While all three implementations work from the same specification, none of them
-generate output that entirely matches the others. In pkgcraft's case, since it
-parses metadata fields internally, it reorders or drop duplicates where
-possible since many of the underlying data structures are ordered sets. It also
-appears to using slightly different eclass inheritance ordering for the related
-field in cases where there are circular inherits.
+While all three projects implement the same specification, none produces
+matching output. In pkgcraft's case metadata fields are parsed internally,
+reordering and removing duplicates where possible since many of the underlying
+data structures are ordered sets. It also appears to use different inheritance
+ordering for circular eclass inherits.
 
-Beyond file serialization, pkgcraft is also stricter in what it allows in
-global scope whether in ebuilds or eclasses due to its bash configuration as
-mentioned previously. This currently causes a decent amount of ebuilds to fail
-when generating metadata due to command failures in eclass global scope. It is
+Beyond file serialization, pkgcraft is stricter in what it allows in global
+scope whether in ebuilds or eclasses due to its bash configuration as mentioned
+previously. This currently causes a decent amount of ebuilds to fail when
+generating metadata due to command failures in eclass global scope. It is
 unlikely portage or pkgcore will ever be able to catch the same level of issues
 since they run their metadata generation natively in function scope which hides
-many of the issues that can only be seen when running in global scope. One way
-to catch them would be to leverage an external bash parser to point them out
-during `pkgcheck` runs.
+many of the issues. One alternative would be to leverage an external bash
+parser flagging issues during `pkgcheck` runs.
 
-Even with these differences, all package managers should be able to use the
-generated cache created via any implementation if they adhere to the specified
-format. This means it's possible to generate metadata more quickly using
-pkgcore or pkgcraft that is then used with portage.
+Even with these differences, package managers should be able to use caches
+created via any implementation if they adhere to the specified format. This
+means it's possible to generate metadata using quicker solutions, pkgcore or
+pkgcraft, that is then used with portage.
 
 # This is fast... but can it go faster?
 
