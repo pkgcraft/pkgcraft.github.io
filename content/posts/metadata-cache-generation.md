@@ -202,14 +202,13 @@ then language bindings can wrap it allowing native metadata regeneration.
 
 ### Tooling extensions
 
-As with all programming languages, it is easy to write poorly performant code
-in bash. It's probably fair to say shell coding exacerbates that because most
-people's interactions with it are either when using an interactive shell or
-writing one-off scripts, performance rarely being a priority in either case.
-This often leads to inadvertently adding poorly performing code including
-extensive subshell or external command use, processing large amounts of
-strings, or poorly written loop structures encompassing the previous two
-variants.
+As with all programming languages, it's easy to write poorly performant code in
+bash. It's probably fair to say shell coding exacerbates the situation because
+most interactions with it are interactive shell usage or one-off scripts,
+performance rarely being a priority in either case. This often leads to
+inadvertently adding poorly performing code including extensive subshell or
+external command use, processing large amounts of strings, or poorly written
+loop structures encompassing the previous two variants.
 
 To help developers debug potential performance issues more subcommands for `pk`
 are being looked at as well. Currently the idea is that `pk pkg env` could be
