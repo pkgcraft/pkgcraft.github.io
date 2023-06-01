@@ -68,26 +68,23 @@ which defaults to the system's number of logical CPU cores when unset.
 
 # Implementation details
 
-In a technical sense, pkgcraft tries to avoid bash as much as possible. As
-described in the previous post on [rustifying
-bash](https://pkgcraft.github.io/posts/rustifying-bash-builtins/), all commands
-and functionality specified by PMS are implemented as builtins natively in rust
-that are then given C compatible wrappers and injected into a bundled version
-of bash. This allows pkgcraft to handle tracking metadata using its own
-internal build state, avoiding mangling bash variables over nested inherits
-where possible.
+In a technical sense, pkgcraft avoids bash as much as possible. As described in
+the post on [rustifying
+bash](https://pkgcraft.github.io/posts/rustifying-bash-builtins/), all
+functionality specified by PMS is implemented with rust building on top of a
+bundled version of bash. This allows tracking metadata using more efficient
+internal state structures rather than bash variables.
 
 Parallelism is handled in a simplistic fashion in that the entire workflow --
 validity checks, ebuild sourcing, metadata structure creation, and file
-serialization -- is done in a forked process pool iterator. How it currently
-works is raw, unsourced packages are iterated over, forking a new process for
-each in a pool limited to a specific size using a bounded semaphore stored in
-shared memory. Inside the forked process the metadata workflow runs to
-completion (or errors out). That result is encoded and sent using an
-inter-process communication (IPC) channel to the main process that unwraps it,
-outputting any error to stderr, while tracking overall status. After all
-packages are processed the process exits using the overall status, failing if
-any errors occurred.
+serialization -- is done in a forked process pool iterator. The process
+involves iterating over raw, unsourced packages, forking a new process for each
+in a pool limited to a specific size using a bounded semaphore stored in shared
+memory. Inside the forked process the metadata workflow runs to completion (or
+errors out) returning a result that is encoded and sent using inter-process
+communication (IPC) to the main process that unwraps it, handling error logging
+while tracking overall status. After all packages are processed the process
+exits, failing if any errors occurred.
 
 For security purposes (and also because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
