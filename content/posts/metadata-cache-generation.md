@@ -77,16 +77,13 @@ internal state structures rather than bash variables.
 
 Parallelism is handled in a simplistic fashion in that the entire workflow --
 validity checks, ebuild sourcing, metadata structure creation, and file
-serialization -- is done in a forked process pool iterator. The process
-involves iterating over raw, unsourced packages, forking a new process for each
-in a pool limited to a specific size using a bounded semaphore stored in shared
-memory. Inside the forked process the metadata workflow runs to completion (or
-errors out) returning a result that is encoded and sent using inter-process
-communication (IPC) to the main process that unwraps it, handling error logging
-while tracking overall status. After all packages are processed the process
-exits, failing if any errors occurred.
+serialization -- runs in a forked process pool. Each process runs the metadata
+workflow for a single package, encoding the result and sending it via
+inter-process communication (IPC) to the main process that unwraps it, handling
+error logging while tracking overall status. After all packages are processed
+the main process exits, failing if any errors occurred.
 
-For security purposes (and also because sandboxing isn't supported yet), ebuild
+For security purposes (and because sandboxing isn't supported yet), ebuild
 sourcing is run within a restricted shell environment. This rejects a lot of
 functionality possible in regular bash including running external commands. To
 see the entire list (with minor differences[^rbash]), run `man rbash`. In
