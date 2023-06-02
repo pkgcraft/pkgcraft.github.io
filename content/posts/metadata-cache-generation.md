@@ -136,17 +136,17 @@ process.
 While all three projects implement the same specification, none produces
 matching output. In pkgcraft's case metadata fields are parsed internally,
 reordering and removing duplicates where possible since many of the underlying
-data structures are ordered sets. It also appears to use different inheritance
-ordering for circular eclass inherits.
+data structures are ordered sets. It also uses different ordering for circular
+eclass inherits.
 
 Beyond file serialization, pkgcraft is stricter in what it allows in global
 scope whether in ebuilds or eclasses due to its bash configuration as mentioned
 previously. This currently causes a decent amount of ebuilds to fail when
-generating metadata due to command failures in eclass global scope. It is
-unlikely portage or pkgcore will ever be able to catch the same level of issues
-since they run their metadata generation natively in function scope which hides
-many of the issues. One alternative would be to leverage an external bash
-parser flagging issues during `pkgcheck` runs.
+generating metadata due to command failures in global scope. It is unlikely
+portage or pkgcore will ever be able to catch the same level of issues since
+they are designed to run their metadata generation natively in function scope
+which hides many of the issues. One alternative would be to leverage an
+external bash parser flagging issues during `pkgcheck` runs.
 
 Even with these differences, package managers should be able to use caches
 created via any implementation if they adhere to the specified format. This
