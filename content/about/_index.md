@@ -18,11 +18,11 @@ repoman getting replaced by [pkgcheck](https://github.com/pkgcore/pkgcheck),
 and a general restraint on progress since few developers volunteer to untangle
 code in order to implement complex features or markedly improve the situation.
 
-Pkgcraft aims to take a different approach, supporting language bindings on top
-of a core library allowing developers to take advantage of optimized
-functionality rather than being forced to reimplement it. This hopefully aids
-code reuse and decreases development time for third parties while keeping focus
-on improving pkgcraft's API and related documentation.
+Pkgcraft takes a different approach, supporting language bindings on top of a
+core library allowing developers to take advantage of optimized functionality
+rather than being forced to reimplement it. This hopefully aids code reuse and
+decreases development time for third parties while keeping focus on improving
+pkgcraft's API and related documentation.
 
 Beyond bindings, it also experiments with ideas including bundling an extended
 version of bash, providing greater efficiency and allowing static binaries for
@@ -51,23 +51,23 @@ dep tree for a running build to be mangled and recalculated on the fly.
 
 ## Why can't this project be merged with pkgcore (or paludis)?
 
-As explained in the previous answers, pkgcraft aims to take an entirely
-different approach than previous projects. With respect to pkgcore, since it
-grew as a direct offshoot of portage it copied much of portage's decisions,
-albeit in a more optimized and API-friendly fashion. It has successfully shown
-what a better designed portage experience could be like, but it's also entirely
-locked into the Python ecosystem and all that entails. On the other hand,
-paludis comes quite a bit closer to pkgcraft's vision as it supports several
-language bindings; however, it has lagged behind newer EAPI support and doesn't
-allow for nearly as much experimentation as pkgcraft.
+As explained in the previous answers, pkgcraft's design doesn't mesh well with
+existing projects. With respect to pkgcore, since it grew as a direct offshoot
+of portage it copied much of portage's decisions, albeit in a more optimized
+and API-friendly fashion. It has successfully shown what a better designed
+portage experience could be like, but it's also entirely locked into the Python
+ecosystem and all that entails. On the other hand, paludis comes quite a bit
+closer to pkgcraft's vision as it supports several language bindings; however,
+it has lagged behind newer EAPI support and doesn't allow for nearly as much
+experimentation as pkgcraft.
 
-While it's hard to directly merge development efforts, in general pkgcraft will
-try to adhere to specifications and defined formats allowing cooperation with
-respect to creating and maintaining them. This should allow other tools to
-build on top of pkgcraft implementations if they wish. Unfortunately, most of
-what makes package managers work beyond direct interactions with ebuilds is
-entirely unspecified so pkgcraft won't be able to be interchangeably used when
-it begins supporting its own package manager.
+While it's hard to directly merge development efforts, in general
+specifications and defined formats will be adhered to allowing cooperation
+where possible. This should allow other tools to build on top of pkgcraft
+implementations if they wish. Unfortunately, most of what makes package
+managers work beyond direct interactions with ebuilds is entirely unspecified
+so pkgcraft won't be able to be interchangeably used when it begins supporting
+its own package manager.
 
 ## Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
@@ -97,8 +97,8 @@ considered alternatives along with some of the reasons why they were rejected:
   matching Rust's level of C compatibility and low level support in general.
 
 - Nim/Zig --- Both of these are interesting as C or C++ replacements, but they
-  lack the community depth that Rust currently has and thus have smaller third
-  party ecosystems.
+  lack community depth and thus have smaller third party ecosystems while still
+  also lacking most of the memory safety that Rust can provide.
 
 - Python/Ruby/etc --- Any dynamically typed, scripting languages fail to easily
   support efficient bindings for other languages and aren't performant enough
@@ -118,12 +118,12 @@ continues to grow, providing more opportunities for funding.
 In terms of a steep learning curve in comparison to something like Python, this
 isn't historically relevant for projects related to Gentoo package management.
 Or stated another way, nearly all major development for package managers
-targeting Gentoo has been done by singular teams regardless of implementation
-language. Those "teams" have changed over time, but rarely are there multiple
-developers doing large, sustained amounts of work on the same project. In
-short, pkgcraft's response to the steep learning curve is that it aims to
-provide bindings for "easier" languages that may be used to avoid rust-based
-development.
+targeting Gentoo has been done by individuals regardless of implementation
+language. Those individuals have changed over time, but rarely are there
+multiple developers doing large amounts of sustained, new development on the
+same project. In short, pkgcraft's response to the steep learning curve is that
+it aims to provide bindings for many languages letting developers use what
+works best for them.
 
 # Project goals
 
