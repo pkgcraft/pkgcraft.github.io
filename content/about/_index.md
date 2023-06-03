@@ -13,10 +13,10 @@ spaghetti largely composed of technical debt and inefficiency, its main upsides
 being user-interface familiarity and years of accumulated bug fixes. While its
 design has been criticized over the years, Gentoo has mostly ignored portage's
 underlying issues leading to [pkgcore](https://github.com/pkgcore) and
-[paludis](https://paludis.exherbo.org/) arising, various fallout such as
-repoman getting replaced by [pkgcheck](https://github.com/pkgcore/pkgcheck),
-and a general restraint on progress since few developers volunteer to untangle
-code in order to implement complex features or markedly improve the situation.
+[paludis](https://paludis.exherbo.org/) arising, repoman getting replaced by
+[pkgcheck](https://github.com/pkgcore/pkgcheck), and a general restraint on
+progress since few developers volunteer to untangle code in order to implement
+complex features or markedly improve the situation.
 
 Pkgcraft takes a different approach, supporting language bindings on top of a
 core library allowing developers to take advantage of optimized functionality
@@ -25,49 +25,46 @@ decreases development time for third parties while keeping focus on improving
 pkgcraft's API and related documentation.
 
 Beyond bindings, it also experiments with ideas including bundling an extended
-version of bash, providing greater efficiency and allowing static binaries for
-the package manager itself (which is semi-relevant for source-based package
-managers).
+version of bash, providing greater efficiency and allowing the possibility of
+static binaries for any tools based on it.
 
 ## Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
 While both projects implement functionality described in
 [PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
-does not plan to duplicate portage's interface or feature set. At its most
-basic, it intends to be a base for building efficient tools. This does allow
-for a future in which portage or other projects leverage pkgcraft to improve
-their capabilities, but that is entirely up to the whims of Gentoo and
-other developers.
+does not plan to duplicate portage's interface or feature set. Instead, it
+intends to be a base for building efficient tools. This does allow for a future
+in which portage leverages pkgcraft to improve its capabilities, but that is
+entirely up to the whims of Gentoo and other developers as this project isn't
+planning to contribute to portage in any way.
 
-In pkgcraft's case, it may develop alternatives encompassing use cases
+That being said, alternatives may be developed that encompass use cases
 currently provided by established tools, but the majority of that work is a
-long way off and probably won't aim for compatibility beyond PMS support. For
-example, the planned design for the pkgcraft's package manager will be that of
-a build daemon supporting various front-ends, encompassing a much broader set
-of use cases than can be performed by portage itself. In theory, it could act
-both as a replacement for [catalyst](https://wiki.gentoo.org/wiki/Catalyst) and
-as a tinderbox while also enabling more exotic features such as allowing the
-dep tree for a running build to be mangled and recalculated on the fly.
+long way off and won't aim for compatibility beyond PMS support. For example,
+the planned design for the pkgcraft's package manager will be that of a build
+daemon supporting various front-ends, encompassing a much broader set of use
+cases than can be performed by portage itself. In theory, it could act both as
+a replacement for [catalyst](https://wiki.gentoo.org/wiki/Catalyst) and as a
+tinderbox while also enabling more exotic features such as allowing the dep
+tree for a running build to be mangled and recalculated on the fly.
 
 ## Why can't this project be merged with pkgcore (or paludis)?
 
-As explained in the previous answers, pkgcraft's design doesn't mesh well with
-existing projects. With respect to pkgcore, since it grew as a direct offshoot
-of portage it copied much of portage's decisions, albeit in a more optimized
-and API-friendly fashion. It has successfully shown what a better designed
-portage experience could be like, but it's also entirely locked into the Python
-ecosystem and all that entails. On the other hand, paludis comes quite a bit
-closer to pkgcraft's vision as it supports several language bindings; however,
-it has lagged behind newer EAPI support and doesn't allow for nearly as much
-experimentation as pkgcraft.
+As explained in the previous answers, the overarching design doesn't mesh well
+with existing projects. Pkgcore began as a direct offshoot of portage and so
+copied many of portage's decisions, albeit in a more optimized fashion. It has
+successfully shown what a cleaner portage design could be like, but it's also
+locked into the Python ecosystem and all that entails. On the other hand,
+paludis comes closer to pkgcraft's vision as it includes several language
+bindings; however, it has lagged behind newer EAPIs and doesn't allow for
+nearly as much experimentation as pkgcraft.
 
-While it's hard to directly merge development efforts, in general
-specifications and defined formats will be adhered to allowing cooperation
-where possible. This should allow other tools to build on top of pkgcraft
-implementations if they wish. Unfortunately, most of what makes package
-managers work beyond direct interactions with ebuilds is entirely unspecified
-so pkgcraft won't be able to be interchangeably used when it begins supporting
-its own package manager.
+While it's hard to directly merge development efforts, specifications and
+defined formats should generally be implemented aiding cooperation where
+possible allowing other tools to build on top of pkgcraft if they wish.
+Unfortunately, most capabilities beyond direct ebuild interaction are entirely
+unspecified so pkgcraft won't be interchangeable with its alternatives when
+package manager tooling arrives.
 
 ## Why isn't pkgcraft implemented in C, C++, Python, etc? Why choose Rust?
 
@@ -89,21 +86,18 @@ considered alternatives along with some of the reasons why they were rejected:
   franca of software.
 
 - C++ --- Like C, it also lacks memory safety guarantees without strict limits
-  and guidelines for a project. In addition, while its community has done a
-  decent job at improving the language over the years (compared to the likes of
-  C) the language has a large tail of accumulated baggage.
+  and guidelines for a project.
 
-- Go --- While good for writing services and tools, it doesn't come close to
-  matching Rust's level of C compatibility and low level support in general.
+- Go --- It mostly feels targeted towards services and tooling, leaving C
+  compatibility, low level support, and memory safety all lacking.
 
-- Nim/Zig --- Both of these are interesting as C or C++ replacements, but they
-  lack community depth and thus have smaller third party ecosystems while still
-  also lacking most of the memory safety that Rust can provide.
+- Nim/Zig --- Both can be interesting as C or C++ replacements, but they have
+  minimal community depth with small third party ecosystems and lack memory
+  safety.
 
-- Python/Ruby/etc --- Any dynamically typed, scripting languages fail to easily
+- Python/Ruby/etc --- Any dynamically typed, scripting languages fail to
   support efficient bindings for other languages and aren't performant enough
-  in certain cases, requiring to implement extensions in external, compiled
-  languages anyway.
+  in some cases, requiring extensions implemented in compiled languages.
 
 The main detriments of Rust in relation to pkgcraft's aspirations are its
 current lack of minor architecture support (compared to C and C++) and its
