@@ -101,8 +101,8 @@ pkgcore, and pkgcraft on a modest laptop with 8 cores/16 threads (AMD Ryzen 7
 SSD are as follows:
 
 - portage: `egencache -j16` -- approximately 5m
-- pkgcore: `pmaint regen -t 16` -- approximately 1m45s
-- pkgcraft: `pk repo metadata -j16` -- approximately 55s
+- pkgcore: `pmaint regen -t 16` -- approximately 1m30s
+- pkgcraft: `pk repo metadata -j16` -- approximately 40s
 
 For a valid metadata cache requiring no updates:
 
