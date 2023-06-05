@@ -75,9 +75,9 @@ functionality specified by PMS is implemented with rust building on top of a
 bundled version of bash. This allows tracking metadata using more efficient
 internal state structures rather than bash variables.
 
-Parallelism is handled in a simplistic fashion in that the entire workflow --
-validity checks, ebuild sourcing, metadata structure creation, and file
-serialization -- runs in a forked process pool. Each process runs the metadata
+Parallelism is handled in a simplistic fashion by running the entire workflow
+-- validity checks, ebuild sourcing, metadata structure creation, and file
+serialization -- in a forked process pool. Each process runs the metadata
 workflow for a single package, encoding the result and sending it via
 inter-process communication (IPC) to the main process that unwraps it, handling
 error logging while tracking overall status. After all packages are processed
