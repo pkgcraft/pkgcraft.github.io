@@ -102,13 +102,13 @@ SSD are as follows:
 
 - portage: `egencache -j16` -- approximately 5m
 - pkgcore: `pmaint regen -t 16` -- approximately 1m30s
-- pkgcraft: `pk repo metadata -j16` -- approximately 40s
+- pkgcraft: `pk repo metadata -j16` -- approximately 30s
 
 For a valid metadata cache requiring no updates:
 
 - portage: `egencache -j16` -- approximately 7s
 - pkgcore: `pmaint regen -t 16` -- approximately 14s
-- pkgcraft: `pk repo metadata -j16` -- approximately 4s
+- pkgcraft: `pk repo metadata -j16` -- approximately .5s
 
 From these results, it's clear that one of portage's main weaknesses of
 entirely respawning bash causes it to lag far behind the other two. The process
