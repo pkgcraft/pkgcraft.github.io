@@ -104,6 +104,14 @@ SSD are as follows:
 - pkgcore: `pmaint regen -t 16` -- approximately 1m30s
 - pkgcraft: `pk repo metadata -j16` -- approximately 30s
 
+For comparative parallel efficiency, pkgcraft achieves the following when using
+different amounts of concurrent jobs:
+
+- pkgcraft: `pk repo metadata -j8` -- approximately 45s
+- pkgcraft: `pk repo metadata -j4` -- approximately 1m
+- pkgcraft: `pk repo metadata -j2` -- approximately 2m
+- pkgcraft: `pk repo metadata -j1` -- approximately 4m
+
 For a valid metadata cache requiring no updates:
 
 - portage: `egencache -j16` -- approximately 7s
@@ -113,10 +121,10 @@ For a valid metadata cache requiring no updates:
 From these results, it's clear that one of portage's main weaknesses of
 entirely respawning bash causes it to lag far behind the other two. The process
 spawning overhead is so dominant that running `egencache` using 16 jobs is
-roughly equivalent to running `pmaint regen` using 2-3 jobs or `pk repo
-metadata` using 1-2 jobs. Due to this, the best advice is to avoid using
-portage for metadata generation if performance is a priority, especially on
-slower hardware.
+roughly equivalent to running `pmaint regen` using 2-3 jobs and even slower
+than `pk repo metadata` using a single job. Due to this, the best advice is to
+avoid using portage for metadata generation if performance is a priority,
+especially on slower hardware.
 
 In constrast, pkgcore performs relatively well due to leveraging a bash daemon
 that spawns subshells (forked processes) to generate metadata thus avoiding
