@@ -57,22 +57,19 @@ better to build in release mode as the default debug mode for builds is often
 quite a lot slower. To use pkgcraft's implementation, see the following
 examples:
 
-Incrementally generate metadata:
+Incrementally generate metadata for the configured `gentoo` repo:
 
-- configured: `pk repo metadata gentoo`
-- external: `pk repo metadata path/to/repo`
+- `pk repo metadata gentoo`
 
-Target multiple repos:
+Target multiple repos including an external repo:
 
-- configured: `pk repo metadata repo1 repo2`
-- external: `pk repo metadata path/to/repo1 path/to/repo2`
+- `pk repo metadata repo1 path/to/repo2`
 
 Force a full regen:
 
-- configured: `pk repo metadata -f repo`
-- external: `pk repo metadata -f path/to/repo`
+- `pk repo metadata -f path/to/repo`
 
-Note that the repo argument must be specified and either be the name of a
+Note that at least one repo must be specified and either be the name of a
 configured ebuild repo on the system or an external repo pointed to via a path.
 Specifying the level of parallelism is supported using the `-j/--jobs` option
 which defaults to the system's number of logical CPU cores when unset.
