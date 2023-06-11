@@ -118,13 +118,17 @@ For a valid metadata cache requiring no updates:
 - pkgcore: `pmaint regen -t 16` -- approximately 14s
 - pkgcraft: `pk repo metadata -j16` -- approximately .5s
 
-From these results, it's clear that one of portage's main weaknesses of
-entirely respawning bash causes it to lag far behind the other two. The process
-spawning overhead is so dominant that running `egencache` using 16 jobs is
-roughly equivalent to running `pmaint regen` using 2-3 jobs and even slower
-than `pk repo metadata` using a single job. Due to this, the best advice is to
-avoid using portage for metadata generation if performance is a priority,
-especially on slower hardware.
+Note that these results are approximated averages for multiple runs without
+flushing memory caches. Initial runs of the same commands will be slower from
+additional I/O latency.
+
+From the results above, the effects from one of portage's design flaws can
+clearly be seen. Any time the bash side of portage is used, a new bash instance
+is started. The process spawning overhead is so dominant that running
+`egencache` using 16 jobs is roughly equivalent to running `pmaint regen` using
+2-3 jobs and even slower than `pk repo metadata` using a single job. Due to
+this, it's best to avoid portage's metadata generation support if performance
+is a priority, especially on slower hardware.
 
 In constrast, pkgcore performs relatively well due to leveraging a bash daemon
 that spawns subshells (forked processes) to generate metadata thus avoiding
