@@ -54,12 +54,23 @@ nesting so its related repo metadata tooling can be found under `pk repo
 metadata`. To build `pk` from pkgcraft's git repo, use `cargo build --release
 --features tools` or similar. Note that when not developing in rust, it's
 better to build in release mode as the default debug mode for builds is often
-quite a lot slower.
+quite a lot slower. To use pkgcraft's implementation, see the following
+examples:
 
-To use pkgcraft's implementation, run commands such as the following:
+Incrementally generate metadata:
 
-- configured repos: `pk repo -r gentoo metadata`
-- external repos: `pk repo -r path/to/repo metadata`
+- configured: `pk repo metadata gentoo`
+- external: `pk repo metadata path/to/repo`
+
+Target multiple repos:
+
+- configured: `pk repo metadata repo1 repo2`
+- external: `pk repo metadata path/to/repo1 path/to/repo2`
+
+Force a full regen:
+
+- configured: `pk repo metadata -f repo`
+- external: `pk repo metadata -f path/to/repo`
 
 Note that the repo argument must be specified and either be the name of a
 configured ebuild repo on the system or an external repo pointed to via a path.
