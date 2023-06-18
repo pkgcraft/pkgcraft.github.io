@@ -124,7 +124,7 @@ For a valid metadata cache requiring no updates:
 
 - portage: `egencache -j16` -- approximately 7s
 - pkgcore: `pmaint regen -t 16` -- approximately 14s
-- pkgcraft: `pk repo metadata -j16` -- approximately .5s
+- pkgcraft: `pk repo metadata -j16` -- approximately .2s
 
 Note that these results are approximated averages for multiple runs without
 flushing memory caches. Initial runs of the same commands will be slower from
