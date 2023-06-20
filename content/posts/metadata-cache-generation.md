@@ -109,13 +109,13 @@ pkgcore, and pkgcraft on a modest laptop with 8 cores/16 threads (AMD Ryzen 7
 SSD are as follows:
 
 - portage: `egencache -j16` -- approximately 5m
-- pkgcore: `pmaint regen -t 16` -- approximately 1m30s
+- pkgcore: `pmaint regen -t 16` -- approximately 1m20s
 - pkgcraft: `pk repo metadata -j16` -- approximately 30s
 
 For comparative parallel efficiency, pkgcraft achieves the following when using
 different amounts of jobs:
 
-- pkgcraft: `pk repo metadata -j8` -- approximately 45s
+- pkgcraft: `pk repo metadata -j8` -- approximately 40s
 - pkgcraft: `pk repo metadata -j4` -- approximately 1m
 - pkgcraft: `pk repo metadata -j2` -- approximately 2m
 - pkgcraft: `pk repo metadata -j1` -- approximately 4m
