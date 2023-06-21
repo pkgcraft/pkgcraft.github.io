@@ -113,7 +113,7 @@ SSD are as follows:
 - pkgcraft: `pk repo metadata -j16` -- approximately 30s
 
 For comparative parallel efficiency, pkgcraft achieves the following when using
-different amounts of concurrent jobs:
+different amounts of jobs:
 
 - pkgcraft: `pk repo metadata -j8` -- approximately 45s
 - pkgcraft: `pk repo metadata -j4` -- approximately 1m
