@@ -8,7 +8,7 @@ meta: false
 
 ## Why does this project exist? Isn't portage good enough?
 
-Portage's inner workings can be succinctly described as a towering pile of
+Portage's inner workings can be bluntly described as a towering pile of
 spaghetti largely composed of technical debt and inefficiency, its main upsides
 being user-interface familiarity and years of accumulated bug fixes. While its
 design has been criticized over the years, Gentoo has mostly ignored portage's
@@ -25,18 +25,20 @@ decreases development time for third parties while keeping focus on improving
 pkgcraft's API and related documentation.
 
 Beyond bindings, it also experiments with ideas including bundling an extended
-version of bash, providing greater efficiency and allowing the possibility of
+version of bash, enabling greater efficiency and allowing the possibility of
 static binaries for any tools based on it.
 
 ## Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
-While both projects implement functionality described in
-[PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification), pkgcraft
-does not plan to duplicate portage's interface or feature set. Instead, it
-intends to be a base for building efficient tools. This does allow for a future
-in which portage leverages pkgcraft to improve its capabilities, but that is
-entirely up to the whims of Gentoo and other developers as this project isn't
-planning to contribute to portage in any way.
+This is not an official Gentoo project and has no plans to become one. As such, there
+is little interest in reimplementing portage-specific functionality for
+interoperability. While both projects implement Gentoo's package manager
+specification ([PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification)),
+pkgcraft does not plan to duplicate portage's interface or feature set. Instead, it
+intends to be a base for building efficient tools. This does allow for a future in
+which portage leverages pkgcraft to improve its capabilities, but that is entirely up
+to the whims of portage developers as this project isn't planning to contribute to
+portage in any way.
 
 That being said, alternatives may be developed that encompass use cases
 currently provided by established tools, but the majority of that work is a
