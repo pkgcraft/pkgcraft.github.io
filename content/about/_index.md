@@ -93,9 +93,10 @@ considered alternatives along with some of the reasons why they were rejected:
 - Go --- It mostly feels targeted towards services and tooling, leaving C
   compatibility, low level support, and memory safety all lacking.
 
-- Nim/Zig --- Both can be interesting as C or C++ replacements, but they have
-  minimal community depth with small third party ecosystems and lack memory
-  safety.
+- D/Nim/Zig --- These may be interesting as C or C++ replacements, but they
+  currently have minimal community depth with relatively small third party
+  ecosystems and lack the same level of memory safety or force the use of a
+  garbage collector.
 
 - Python/Ruby/etc --- Any dynamically typed, scripting languages fail to
   support efficient bindings for other languages and aren't performant enough
