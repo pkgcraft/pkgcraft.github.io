@@ -49,13 +49,19 @@ invalid formatting.
 
 # Pkgcraft tooling
 
-Pkgcraft supports interactive tooling under the `pk` command using subcommand
-nesting so its related repo metadata tooling can be found under `pk repo
-metadata`. To build `pk` from pkgcraft's git repo, use `cargo build --release
---features tools` or similar. Note that when not developing in rust, it's
-better to build in release mode as the default debug mode for builds is often
-quite a lot slower. To use pkgcraft's implementation, see the following
-examples:
+Pkgcraft provides various command-line tools under the `pk` command from the
+pkgcraft-tools crate with metadata generation support via `pk repo metadata`.
+
+### Install
+
+Current release: `cargo install pkgcraft-tools`
+
+From git: `cargo install pkgcraft-tools --git https://github.com/pkgcraft/pkgcraft.git`
+
+Pre-built binaries are also provided for [releases on supported
+platforms](https://github.com/pkgcraft/pkgcraft/releases).
+
+### Usage
 
 Incrementally generate metadata for the configured `gentoo` repo:
 
