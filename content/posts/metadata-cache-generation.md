@@ -102,10 +102,10 @@ sourcing is run within a restricted shell environment. This rejects a lot of
 functionality possible in regular bash including running external commands. To
 see the entire list (with minor differences[^rbash]), run `man rbash`. In
 addition, sourcing functionality is configured to act similar to `set -e` being
-enabled causing package sourcing to error out if any command fails. Overall,
-the stricter environment has highlighted many instances of questionable bash
-usage in the tree such as using `return 0` or declaring local variables in
-global scope.
+enabled, but instead triggered by internal bash errors and not command exit
+statuses. Overall, the stricter environment has highlighted many instances of
+questionable bash usage in the tree such as using `return 0` or declaring local
+variables in global scope.
 
 # Benchmarks and performance
 
