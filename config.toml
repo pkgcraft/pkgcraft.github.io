@@ -674,6 +674,21 @@ uglyURLs = false
     gitalkEnableHotKey = true
     # Note: https://github.com/gitalk/gitalk
 
+    ## Giscus
+    enableGiscus = true
+    giscusRepo = "pkgcraft/pkgcraft"
+    giscusRepoId = "MDEwOlJlcG9zaXRvcnkzODY3ODEwMTE="
+    giscusCategory = "Blog"
+    giscusCategoryId = "DIC_kwDOFw3PU84CgQYi"
+    giscusMapping = "pathname"
+    giscusStrict = true
+    giscusReactionsEnabled = true
+    giscusEmitMetaData = false
+    giscusInputPosition = "top"
+    giscusTheme = "light"
+    giscusThemeDark = "dark"
+    giscusLang = "en"
+    # Note: https://giscus.app
 
     ######################################
     # Google Analytics
