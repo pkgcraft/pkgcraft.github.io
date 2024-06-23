@@ -317,12 +317,12 @@ more experienced devs, it would be handy to support natively instead of forcing 
 roll their own scripts.
 
 
-[^pkgcore]: Pkgcore ambles over the low bar of having a better design than portage but has
-    been showing its age since 2015 or so. It's overly meta-design friendly, leaning into
-    python's **"everything is an object"** approach too much in areas while trying to hack
-    around the downsides for performance reasons.
+[^pkgcore]: Pkgcore ambles over the low bar set by portage's design but has been showing
+    its age since 2015 or so. It's overly meta, leaning into python's **"everything is an
+    object"** tenet too much while hacking around the downsides of that approach for
+    performance reasons.
 
-[^pkgcruft]: Aiming to fight the neverending torrent of cruft in ebuild repos.
+[^pkgcruft]: Aiming to fight the neverending torrent of package cruft in ebuild repos.
 
 [^pkgcraft-tools]: Install pkgcraft-tools in order to use the `pk` command.
 
