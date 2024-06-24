@@ -261,8 +261,8 @@ use cases.
 With that in mind, pkgcruft runs significantly faster than pkgcheck for single threaded
 comparisons of related checks before taking its more efficient parallelization design
 (threads vs processes) into account. Similar to the jump from repoman to pkgcheck, using
-pkgcruft could enable even more CI integration that has never been seriously considered
-such as server-side git support.
+pkgcruft could enable even more CI functionality that has never been seriously considered
+such as rejecting git pushes server-side due to invalid commits.
 
 # Future work
 
@@ -274,7 +274,7 @@ completed.
 ### Viable revdeps cache
 
 Verifying reverse dependencies (revdeps) is potentially related to many dependency-based
-checks most of which are limited in functionality or have to run over the entire repo. For
+checks most of which are limited in scope or have to run over the entire repo. For
 example, when removing packages pkgcheck needs to do a full tree visibility scan in order
 to verify package dependencies.
 
