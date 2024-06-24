@@ -250,8 +250,8 @@ Disregarding the work done on enabling more extensive checks, it can be argued t
 pkgcheck's performance differential allowed it to be more reasonably deployed at scale and
 is one of the main reasons Gentoo QA has noticeably improved in the last five to ten
 years. Instead of measuring a full tree scan in hours (or perhaps even days on slower
-machines) it can run in minutes. This has enabled Gentoo CI to flag issues within a
-shorter time period after being pushed to the tree.
+machines) it can run in minutes. This has enabled Gentoo's CI (continuous integration)
+setup to flag issues within a shorter time period after being pushed to the tree.
 
 Pkgcheck's main performance improvement over repoman came in terms of its design enabling
 much better internal parallelization support which repoman entirely lacked for the
