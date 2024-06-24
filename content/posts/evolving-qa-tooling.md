@@ -210,12 +210,10 @@ the runtime before resorting to more drastic changes such as a more performant m
 cache format.
 
 While it should still be able to improve, pkgcruft already runs faster using a single
-thread than pkgcheck running on all available cores. Most of this probably comes from
-implementation language choice.
-
-This is further exhibited when restricting the target to single category and single
-package runs where process startup time dominates. See the following results for the same
-check run in those contexts:
+thread than pkgcheck running on all available cores. Most of this probably comes from the
+implementation language which is further exhibited when restricting runs to single
+category and package targets where process startup time dominates. See the following
+results for the same check run in those contexts:
 
 Targeting dev-python/*:
 
