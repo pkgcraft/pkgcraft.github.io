@@ -21,8 +21,8 @@ to it being officially retired in 2022 in favor of pkgcheck (and pkgdev).
 Comparatively speaking, pkgcheck is much better designed than repoman; however, it still
 lags in many areas generally due in part to relying on pkgcore[^pkgcore] and using an
 amalgamation of caching and hacks in order to obtain a modicum of performance via
-parallelization. In short, I think it should be possible to do better, but the path
-towards a potential alternative is not easy.
+parallelization. In short, it should be possible to do better, but the path towards an
+alternative is not easy.
 
 # Pkgcraft support
 
