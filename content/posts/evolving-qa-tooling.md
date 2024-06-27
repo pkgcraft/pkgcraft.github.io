@@ -11,18 +11,18 @@ around the limitations of official tooling. More recently, the relaxed standards
 tightened up a fair amount, but it should be possible to achieve more results with further
 improvement.
 
-Having become an official developer in 2010, much of my initial ebuild development
-revolved around CVS and repoman, both of which felt slow and antiquated even at the outset
-of my tenure. Thankfully, CVS was swapped out for git in 2015, but repoman stuck around
-for nearly another decade after that. While work was done on repoman over the years
-between 2010 and 2020, the overall weakness of its design was never corrected leading
-to it being officially retired in 2022 in favor of pkgcheck (and pkgdev).
+Beginning my tenure as an ebuild maintainer between 2005 and 2010, much of the development
+process revolved around CVS and repoman, both of which felt slow and antiquated even at
+the outset. Thankfully, CVS was swapped out for git in 2015, but repoman stuck around for
+years after that. While work was done on repoman over the years that followed, its overall
+design flaws were never corrected leading to it being officially retired in 2022 in favor
+of pkgcheck (and pkgdev).
 
 Comparatively speaking, pkgcheck is much better designed than repoman; however, it still
 lags in many areas generally due in part to relying on pkgcore[^pkgcore] and using an
-amalgamation of caching and hacks in order to obtain a modicum of performance via
-parallelization. In short, it should be possible to do better, but the path towards an
-alternative is not easy.
+amalgamation of caching and hacks to obtain a modicum of performance via parallelization.
+In short, it should be possible to do better, but the path towards an alternative is not
+easy.
 
 # Pkgcraft support
 
