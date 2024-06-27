@@ -6,10 +6,10 @@ tags: ["linting", "Gentoo"]
 ---
 
 QA support in Gentoo has been a fluid, amorphous goal over the project's history.
-Throughout the years, developers have invented their own scripts and workflows to
-workaround the limitations of official tooling. More recently, the relaxed standards have
-been tightened up a fair amount, but it should be possible to achieve more results with
-further improvement.
+Throughout the years, developers have invented their own scripts and extensions to work
+around the limitations of official tooling. More recently, the relaxed standards have been
+tightened up a fair amount, but it should be possible to achieve more results with further
+improvement.
 
 Having become an official developer in 2010, much of my initial ebuild development
 revolved around CVS and repoman, both of which felt slow and antiquated even at the outset
