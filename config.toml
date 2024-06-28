@@ -22,7 +22,7 @@ defaultContentLanguageInSubdir = false
 pluralizeListTitles = false
 
 # The length of text in words to show in summary
-summaryLength = 32
+summaryLength = 40
 
 # Enable Emoji emoticons support?
 enableEmoji = false
