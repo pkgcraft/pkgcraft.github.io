@@ -233,10 +233,10 @@ Finally, in terms of memory usage pkgcruft usually consumes about an order of ma
 less than pkgcheck mostly due to python's ownership model as rust can more easily use
 immutable references rather than cloning objects. Also, pkgcheck's parallel design uses
 processes instead of threads due to python's weaker concurrency support again due to
-historical language design[^python-gil] leading to more memory use inefficiency. This
-difference may increase as more intensive checks or query caching is implemented as
-pkgcruft should be able to share writable objects between threads via locking or channels
-more readily than pkgcheck can in a performant manner between processes.
+historical language design[^python-gil] leading to more inefficiency. This difference may
+increase as more intensive checks or query caching is implemented as pkgcruft should be
+able to share writable objects between threads via locking or channels more readily than
+pkgcheck can in a performant manner between processes.
 
 # But is the duplicated effort worth it?
 
