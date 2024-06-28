@@ -8,8 +8,8 @@ tags: ["python", "pkgcraft", "Gentoo"]
 One of Gentoo's major weaknesses is the lack of a shared implementation that
 natively supports bindings to other languages for core, specification-level
 features such as dependency format parsing. Due to this deficiency, over the
-years I've seen the same algorithms implemented in Python, C, Bash, Go, and
-more at varying levels of success.
+years the same algorithms have been implemented in Python, C, Bash, Go, and
+more at varying levels of quality and completeness.
 
 Now, I must note that I don't mean to disparage these efforts especially when
 done for fun or to learn a new language; however, it often seems they end up in
