@@ -6,15 +6,15 @@ tags: ["bash", "pkgcraft", "rust"]
 ---
 
 In the previous post on extending bash, using builtins was mentioned as a way
-to improve extensibility. Rather than writing native bash functions or spawning
-processes to run external tools, pkgcraft implements all its bash command
-support using builtins.
+to improve extensibility. Rather than writing native functions or spawning
+external tools, pkgcraft implements all its bash command support using builtins
+enabling it to achieve much lower overhead for EAPI related functionality.
 
-For example, the `inherit` command used to load eclasses, `die`, and all
-install-related functionality (e.g. `doins`) are all implemented as
-builtins[^builtins]. This allows for a more seamless experience compared to pkgcore
-which implements all of this natively in bash using a simple daemon that sends
-messages via shared fds to communicate between the python and bash sides.
+For example, the `inherit` command that loads eclasses, `die`, and
+install-related functionality such as `doins` are all implemented as
+builtins[^builtins]. This allows for a more seamless experience compared to
+pkgcore which implements this natively in bash using a simple daemon that sends
+messages via shared fds to communicate between python and bash.
 
 Note that these builtins are not readily available for use in regular bash
 since most are highly Gentoo specific, often rely on underlying build state,
