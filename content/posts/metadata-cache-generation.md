@@ -8,10 +8,9 @@ tags: ["bash"]
 Bash is slow. Supporting a nested inheritance structure on top of bash makes it
 even slower. Without metadata caches, processing ebuilds would be
 extraordinarily more painful than it already is. Imagine the extra time it
-would take to source all the ebuilds required to run a command such as `emerge
--e world` before dependency resolution can begin. Clearly the importance of
-using a cache when dealing with a large corpus of highly nested bash code
-cannot be understated.
+would take to source all relevant ebuilds while resolving dependencies. Clearly
+the importance of using a cache when dealing with a large corpus of highly
+nested bash code cannot be understated.
 
 For ebuild repos, the metadata cache is currently located at metadata/md5-cache
 from the repo root and is created by sourcing each ebuild with all its eclass
