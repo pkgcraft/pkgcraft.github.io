@@ -206,8 +206,8 @@ latency.
 While the python update check isn't overly complex it does require querying the repo for
 package matches which is the most significant portion of its runtime. Little to no work
 has been done on querying performance for pkgcraft yet, so it may be possible to decrease
-the runtime before resorting to more drastic changes such as a more performant metadata
-cache format.
+the runtime before resorting to drastic changes such as a more performant metadata cache
+format.
 
 While it should still be able to improve, pkgcruft already runs faster using a single
 thread than pkgcheck running on all available cores. Most of this probably comes from the
