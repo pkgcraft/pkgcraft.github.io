@@ -79,8 +79,8 @@ It might be easiest to add a shell alias allowing for options to be specified fo
 ## Usage
 
 Much of the pkgcruft's command-line interface mirrors that of pkgcheck as there are only
-so many ways to construct a linter and it helps new users map their existing knowledge to
-a new tool. See the following commands for example usage:
+so many ways to construct a linter and it aids mapping existing knowledge to a new tool.
+See the following commands for example usage:
 
 ### Scanning
 
