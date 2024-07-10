@@ -21,8 +21,8 @@ of pkgcheck (and pkgdev).
 Comparatively speaking, pkgcheck is much better designed than repoman; however, it still
 lags in many areas generally due in part to relying on pkgcore[^pkgcore] and using an
 amalgamation of caching and hacks to obtain a modicum of performance via parallelization.
-In short, it should be possible to do better, but the path towards an alternative is not
-easy.
+In short, performance can still be drastically improved, but the work required to achieve
+such results is not easy.
 
 # Pkgcraft support
 
@@ -226,8 +226,8 @@ Targeting dev-python/jupyter-server:
 - pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately .022s
 
 Note that in the case of targeting a single package with multiple versions, pkgcruft
-currently doesn't parallelize per version and thus could potentially half its runtime if
-that work is done.
+currently doesn't parallelize per version and thus could possibly half its runtime if that
+work is done.
 
 Finally, in terms of memory usage pkgcruft usually consumes about an order of magnitude
 less than pkgcheck mostly due to python's ownership model as rust can more easily use
@@ -272,17 +272,16 @@ shackles.
 
 # Future work
 
-As with all potential replacement projects, there are many features pkgcruft lacks when
-comparing it to pkgcheck. Besides the obvious check set differential, the following are a
-few ideas beyond what pkgcheck supports that could come to fruition if more work is
-completed.
+As with all replacement projects, there are many features pkgcruft lacks when comparing it
+to pkgcheck. Besides the obvious check set differential, the following are a few ideas
+beyond what pkgcheck supports that could come to fruition if more work is completed.
 
 ### Viable revdeps cache
 
-Verifying reverse dependencies (revdeps) is potentially related to many dependency-based
-checks most of which are limited in scope or have to run over the entire repo. For
-example, when removing packages pkgcheck needs to do a full tree visibility scan in order
-to verify package dependencies.
+Verifying reverse dependencies (revdeps) is related to many dependency-based checks most
+of which are limited in scope or have to run over the entire repo. For example, when
+removing packages pkgcheck needs to do a full tree visibility scan in order to verify
+package dependencies.
 
 Leveraging a revdeps cache, this could be drastically simplified to checking a much
 smaller set of packages. The major issues with this feature are defining a cache format
