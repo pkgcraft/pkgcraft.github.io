@@ -264,6 +264,12 @@ comparisons of related checks before taking its more efficient parallelization d
 pkgcruft could enable even more CI functionality that has never been seriously considered
 such as rejecting git pushes server-side due to invalid commits.
 
+Whether this makes the reimplementation effort worthwhile is still debatable, but it's
+hard to argue against a design that achieves similar results using an order of magnitude
+less time and space with little work done towards performance thus far. If nothing else,
+it exhibits a glimpse of potential gains if Gentoo can ever break free of its pythonic
+shackles.
+
 # Future work
 
 As with all potential replacement projects, there are many features pkgcruft lacks when
