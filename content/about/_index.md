@@ -91,7 +91,7 @@ considered alternatives along with some of the reasons why they were rejected:
   and guidelines for a project.
 
 - Go --- It mostly feels targeted towards services and tooling, leaving C
-  compatibility, low level support, and memory safety all lacking.
+  compatibility and low level support lacking.
 
 - D/Nim/Zig --- These may be interesting as C or C++ replacements, but they
   currently have minimal community depth with relatively small third party
