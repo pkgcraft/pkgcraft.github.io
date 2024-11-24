@@ -55,27 +55,6 @@ From git: `cargo install pkgcruft --git https://github.com/pkgcraft/pkgcraft.git
 Pre-built binaries are also provided for [releases on supported
 platforms](https://github.com/pkgcraft/pkgcraft/releases).
 
-### Metadata issues
-
-Before going through usage patterns, it should be noted that pkgcraft currently doesn't
-handle metadata generation in threaded contexts so pkgcruft will often crash when run
-against ebuilds with outdated metadata. Fixing this requires redesigning how pkgcraft
-interacts with its embedded bash interpreter, probably forcing the use of a process
-spawning daemon similar to pkgcore's ebd (ebuild daemon), but handled natively instead of
-in bash.
-
-A simple workaround involves incrementally generating metadata via running `pk pkg
-metadata` from any ebuild repo directory[^pkgcraft-tools]. If that command completes
-successfully, then pkgcruft can be run from the same directory as well. On failure, the
-related errors should be fixed and metadata generated before attempting to run pkgcruft.
-So as a reference, pkgcruft can safely be run on writable repos via a command similar to
-the following:
-
-- `pk pkg metadata && pkgcruft scan`
-
-It might be easiest to add a shell alias allowing for options to be specified for
-`pkgcruft scan` until pkgcraft's metadata generation issue with threads is solved.
-
 ## Usage
 
 Much of the pkgcruft's command-line interface mirrors that of pkgcheck as there are only
