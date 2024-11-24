@@ -52,8 +52,9 @@ Current release: `cargo install pkgcruft`
 
 From git: `cargo install pkgcruft --git https://github.com/pkgcraft/pkgcraft.git`
 
-Pre-built binaries are also provided for [releases on supported
-platforms](https://github.com/pkgcraft/pkgcraft/releases).
+Pre-built binaries are provided for [releases on supported
+platforms](https://github.com/pkgcraft/pkgcraft/releases) which can be
+installed with cargo-binstall.
 
 ## Usage
 
