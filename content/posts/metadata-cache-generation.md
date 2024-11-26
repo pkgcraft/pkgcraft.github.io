@@ -49,7 +49,7 @@ invalid formatting.
 # Pkgcraft tooling
 
 Pkgcraft provides various command-line tools under the `pk` command from the
-pkgcraft-tools crate with metadata generation support via `pk repo metadata`.
+pkgcraft-tools crate with metadata generation support via `pk repo metadata regen`.
 
 ### Install
 
@@ -64,15 +64,15 @@ platforms](https://github.com/pkgcraft/pkgcraft/releases).
 
 Incrementally generate metadata for the configured `gentoo` repo:
 
-- `pk repo metadata gentoo`
+- `pk repo metadata regen gentoo`
 
 Target multiple repos including an external repo:
 
-- `pk repo metadata repo1 path/to/repo2`
+- `pk repo metadata regen repo1 path/to/repo2`
 
 Force a full regen:
 
-- `pk repo metadata -f path/to/repo`
+- `pk repo metadata regen -f path/to/repo`
 
 Note that at least one repo must be specified and either be the name of a
 configured ebuild repo on the system or an external repo pointed to via a path.
@@ -115,21 +115,21 @@ SSD are as follows:
 
 - portage: `egencache -j16` -- approximately 5m
 - pkgcore: `pmaint regen -t 16` -- approximately 1m20s
-- pkgcraft: `pk repo metadata -j16` -- approximately 30s
+- pkgcraft: `pk repo metadata regen -j16` -- approximately 30s
 
 For comparative parallel efficiency, pkgcraft achieves the following when using
 different amounts of jobs:
 
-- pkgcraft: `pk repo metadata -j8` -- approximately 40s
-- pkgcraft: `pk repo metadata -j4` -- approximately 1m
-- pkgcraft: `pk repo metadata -j2` -- approximately 2m
-- pkgcraft: `pk repo metadata -j1` -- approximately 4m
+- pkgcraft: `pk repo metadata regen -j8` -- approximately 40s
+- pkgcraft: `pk repo metadata regen -j4` -- approximately 1m
+- pkgcraft: `pk repo metadata regen -j2` -- approximately 2m
+- pkgcraft: `pk repo metadata regen -j1` -- approximately 4m
 
 For a valid metadata cache requiring no updates:
 
 - portage: `egencache -j16` -- approximately 7s
 - pkgcore: `pmaint regen -t 16` -- approximately 14s
-- pkgcraft: `pk repo metadata -j16` -- approximately .2s
+- pkgcraft: `pk repo metadata regen -j16` -- approximately .2s
 
 Note that these results are approximated averages for multiple runs without
 flushing memory caches. Initial runs of the same commands will be slower from
@@ -139,7 +139,7 @@ From the results above, the effects from one of portage's design flaws can
 clearly be seen. Any time the bash side of portage is used, a new bash instance
 is started. The process spawning overhead is so dominant that running
 `egencache` using 16 jobs is roughly equivalent to running `pmaint regen` using
-2-3 jobs and even slower than `pk repo metadata` using a single job. Due to
+2-3 jobs and even slower than `pk repo metadata regen` using a single job. Due to
 this, it's best to avoid portage's metadata generation support if performance
 is a priority, especially on slower hardware.
 
@@ -210,7 +210,7 @@ verification.
 
 ### Language bindings
 
-Beyond using `pk repo metadata`, language bindings should be able to natively
+Beyond using `pk repo metadata regen`, language bindings should be able to natively
 trigger metadata regen for relevant repos. This mainly entails adding support
 into pkgcraft-c and determining what level of runtime feedback it provides,
 e.g. it could return an iterator of errors, accept a callback function for
