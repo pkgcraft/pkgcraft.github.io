@@ -70,10 +70,10 @@ Force a full regen:
 
 - `pk repo metadata regen -f path/to/repo`
 
-Note that at least one repo must be specified and either be the name of a
-configured ebuild repo on the system or an external repo pointed to via a path.
-Specifying the level of parallelism is supported using the `-j/--jobs` option
-which defaults to the system's number of logical CPU cores when unset.
+Note that a repo must be specified and either be the name of a configured
+ebuild repo on the system or an external repo pointed to via a path. Specifying
+the level of parallelism is supported using the `-j/--jobs` option which
+defaults to the system's number of logical CPU cores when unset.
 
 # Implementation details
 
