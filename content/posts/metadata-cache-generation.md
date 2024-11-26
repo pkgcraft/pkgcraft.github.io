@@ -80,9 +80,9 @@ defaults to the system's number of logical CPU cores when unset.
 In a technical sense, pkgcraft avoids bash as much as possible. As described in
 the post on [rustifying
 bash](https://pkgcraft.github.io/posts/rustifying-bash-builtins/), all
-functionality specified by PMS is implemented with rust building on top of a
-bundled version of bash. This allows tracking metadata using more efficient
-internal state structures rather than bash variables.
+bash-related functionality is implemented in rust building on top of a bundled
+version of bash. This allows tracking metadata using more flexible and
+efficient data structures than bash variables.
 
 Parallelism is handled in a simplistic fashion by running the entire workflow
 -- validity checks, ebuild sourcing, metadata structure creation, and file
