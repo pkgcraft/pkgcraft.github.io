@@ -66,10 +66,6 @@ Incrementally generate metadata for the configured `gentoo` repo:
 
 - `pk repo metadata regen gentoo`
 
-Target multiple repos including an external repo:
-
-- `pk repo metadata regen repo1 path/to/repo2`
-
 Force a full regen:
 
 - `pk repo metadata regen -f path/to/repo`
