@@ -30,25 +30,26 @@ static binaries for any tools based on it.
 
 ## Is this a portage rewrite or is pkgcraft targeting replacing portage?
 
-This is not an official Gentoo project and has no plans to become one. As such, there
-is little interest in reimplementing portage-specific functionality for
-interoperability. While both projects implement Gentoo's package manager
-specification ([PMS](https://wiki.gentoo.org/wiki/Package_Manager_Specification)),
-pkgcraft does not plan to duplicate portage's interface or feature set. Instead, it
-intends to be a base for building efficient tools. This does allow for a future in
-which portage leverages pkgcraft to improve its capabilities, but that is entirely up
-to the whims of portage developers as this project isn't planning to contribute to
-portage in any way.
+This is not an official Gentoo project and has no plans to become one. As such,
+there is little interest in reimplementing portage-specific functionality for
+interoperability. While both projects implement Gentoo's [package manager
+specification](https://wiki.gentoo.org/wiki/Package_Manager_Specification),
+pkgcraft does not plan to duplicate portage's interface or feature set.
+Instead, it intends to be a base for building efficient tools. This does allow
+for a future in which portage leverages pkgcraft to improve its capabilities,
+but that is entirely up to the whims of portage developers as this project
+isn't planning to contribute to portage in any way.
 
 That being said, alternatives may be developed that encompass use cases
 currently provided by established tools, but the majority of that work is a
-long way off and won't aim for compatibility beyond PMS support. For example,
-the planned design for the pkgcraft's package manager will be that of a build
-daemon supporting various front-ends, encompassing a much broader set of use
-cases than can be performed by portage itself. In theory, it could act both as
-a replacement for [catalyst](https://wiki.gentoo.org/wiki/Catalyst) and as a
-tinderbox while also enabling more exotic features such as allowing the dep
-tree for a running build to be mangled and recalculated on the fly.
+long way off and won't aim for compatibility beyond supporting most of the
+official specification. For example, the planned design for the pkgcraft's
+package manager will be that of a build daemon supporting various front-ends,
+encompassing a much broader set of use cases than can be performed by portage
+itself. In theory, it could act both as a replacement for
+[catalyst](https://wiki.gentoo.org/wiki/Catalyst) and as a tinderbox while also
+enabling more exotic features such as allowing the dep tree for a running build
+to be mangled and recalculated on the fly.
 
 ## Why can't this project be merged with pkgcore (or paludis)?
 
