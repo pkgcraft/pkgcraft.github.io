@@ -34,17 +34,17 @@ and are generally required when running on ebuild repos lacking bundled,
 pre-generated metadata.
 
 Metadata generation implementations handle verification differently with both
-portage and pkgcore treating the data as raw strings performing few validity
-checks. Verification requires parsing metadata strings into relevant data
-structures significantly extending generation time when written in slower
-languages. This is resolved using development tools such as pkgcheck that
-verifies ebuild metadata before pushing commits.
+portage and pkgcore treating the data as raw strings, performing few validity
+checks. Proper verification requires parsing metadata strings into relevant
+data structures significantly extending generation time when written in slower
+languages. This is currently resolved using other development tools (such as
+pkgcheck) that perform the metadata parsing, flagging errors as they arise.
 
-Conversely, pkgcraft tries to confirm metadata validity as much as possible.
-Most verification using localized knowledge is performed, but anything
-requiring repo-wide info such as dependency visibility is not. For example, all
-dependency fields are parsed into their related data structures, catching any
-invalid formatting.
+Conversely, pkgcraft aims to perform as much verification as much as possible
+during generation. Most verification using localized knowledge is performed,
+but more performance intensive checks requiring repo-wide info such as
+dependency visibility are not. For example, all dependency fields are parsed
+into their related data structures, catching any invalid formatting.
 
 # Pkgcraft tooling
 
