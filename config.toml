@@ -826,7 +826,7 @@ uglyURLs = false
     ######################################
     # Headings Anchor
 
-    enableHeadingsAnchor = true
+    enableHeadingsAnchor = false
     # Note: *global settings*
     #       `anchor` in post’s Front Matter
     #       has a higher priority than here
