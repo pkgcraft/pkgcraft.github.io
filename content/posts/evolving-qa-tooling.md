@@ -169,15 +169,15 @@ semi-recent gentoo repo checkout on a modest laptop with 8 cores/16 threads (AMD
 5700U) using a midline SSD are as follows:
 
 - pkgcheck: `pkgcheck scan -c PythonCompatCheck -j16` -- approximately 5s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately .56s
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately 360ms
 
 For comparative parallel efficiency, pkgcruft achieves the following with different
 amounts of jobs:
 
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j8` -- approximately .65s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j4` -- approximately 1s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j2` -- approximately 2s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j1` -- approximately 4s
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j8` -- approximately 420ms
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j4` -- approximately 660ms
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j2` -- approximately 1.2s
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j1` -- approximately 2.4s
 
 Note that these results are approximated averages for multiple runs without flushing
 memory caches. Initial runs of the same commands will be slower due to additional I/O
@@ -198,12 +198,12 @@ results for the same check run in those contexts:
 Targeting dev-python/*:
 
 - pkgcheck: `pkgcheck scan -c PythonCompatCheck -j16` -- approximately 1s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately .13s
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately 100ms
 
 Targeting dev-python/jupyter-server:
 
-- pkgcheck: `pkgcheck scan -c PythonCompatCheck -j16` -- approximately .38s
-- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately .022s
+- pkgcheck: `pkgcheck scan -c PythonCompatCheck -j16` -- approximately 380ms
+- pkgcruft: `pkgcruft scan -c PythonUpdate -j16` -- approximately 25ms
 
 Note that in the case of targeting a single package with multiple versions, pkgcruft
 currently doesn't parallelize per version and thus could possibly half its runtime if that
