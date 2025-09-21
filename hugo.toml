@@ -36,15 +36,16 @@ enableGitInfo = false
 # Enable generation of `robots.txt` file?
 enableRobotsTXT = true
 
-# Number of items per page in paginated
-# lists (valid for the `posts` homepage
-# layout in MemE)
-paginate = 4
-
 # URL related
 disablePathToLower = false
 relativeURLs = false
 uglyURLs = false
+
+# Number of items per page in paginated
+# lists (valid for the `posts` homepage
+# layout in MemE)
+[pagination]
+  pagerSize = 4
 
 # URL structure
 [permalinks]
