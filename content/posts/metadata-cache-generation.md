@@ -132,7 +132,7 @@ flushing memory caches. Initial runs of the same commands will be slower from
 additional I/O latency.
 
 From the results above, the effects from one of portage's design flaws can
-clearly be seen. Any time the bash side of portage is used, a new bash instance
+clearly be seen. Anytime the bash side of portage is used, a new bash instance
 is started. The process spawning overhead is so dominant that running
 `egencache` using 16 jobs is roughly equivalent to running `pmaint regen` using
 2-3 jobs and even slower than `pk repo metadata regen` using a single job. Due to
